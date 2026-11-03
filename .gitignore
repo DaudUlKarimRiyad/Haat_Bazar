@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+.venv/
+venv/
+*.pyc
+*.pyo
+*.pyd
+.Python
+pip-log.txt
+pip-delete-this-directory.txt
+.pytest_cache/
+
+# Node
+node_modules/
+frontend/node_modules/
+frontend/dist/
+dist/
+.npm
+
+# Local SQLite Database
+*.db
+*.sqlite3
+
+# Environment & Vercel
+.env
+.env.local
+.env.*.local
+.vercel/
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+.idea/

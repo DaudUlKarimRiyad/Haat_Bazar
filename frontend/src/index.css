@@ -1,0 +1,34 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.ant-layout {
+  min-height: 100vh;
+}
+
+.haat-banner {
+  background: linear-gradient(135deg, #135200 0%, #237804 50%, #52c41a 100%);
+  color: white;
+  padding: 24px;
+  border-radius: 8px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.calculator-card {
+  border: 1px solid #d9f7be;
+  background: #f6ffed;
+  border-radius: 8px;
+}
+
+[data-theme='dark'] .calculator-card {
+  background: #132415;
+  border-color: #27492a;
+}
