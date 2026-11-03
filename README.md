@@ -31,7 +31,7 @@
 
 ### 1.1 Structural Agri-Market Breakdown
 In traditional fresh-produce markets across South Asia:
-* **Multi-Layered Intermediaries:** Produce traverses 4 to 6 informal handling layers ($\text{Farmer} \rightarrow \text{Faria} \rightarrow \text{Bepari} \rightarrow \text{Aratdar} \rightarrow \text{Paikar/Wholesaler} \rightarrow \text{Retailer}$).
+* **Multi-Layered Intermediaries:** Produce traverses 4 to 6 informal handling layers ($\text{Farmer} \rightarrow \text{Dalal / Local Middleman} \rightarrow \text{Bepari} \rightarrow \text{Aratdar} \rightarrow \text{Paikar/Wholesaler} \rightarrow \text{Retailer}$).
 * **Margin Compression:** Farmers capture merely $20\% \text{ to } 35\%$ of the consumer retail rupee/taka, with middle layers taking over $50\%$.
 * **Post-Harvest Loss (PHL):** Transit fragmentation and uncoordinated logistics account for $25\% \text{ to } 40\%$ spoilage in perishable perishables.
 * **Distress Selling:** Due to zero real-time market discovery, individual farmers often sell below cost during peak localized harvests.
