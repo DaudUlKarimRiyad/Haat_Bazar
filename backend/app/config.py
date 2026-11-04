@@ -3,9 +3,14 @@ import glob
 import os
 from pathlib import Path
 from typing import Optional
+from dotenv import load_dotenv
 
 BACKEND_DIR = Path(__file__).resolve().parent.parent
 ROOT_DIR = BACKEND_DIR.parent
+
+# Load environment variables from .env file
+load_dotenv(ROOT_DIR / ".env")
+load_dotenv(BACKEND_DIR / ".env")
 
 # Discover Firebase Service Account JSON credentials
 FIREBASE_CRED_ENV = os.getenv("FIREBASE_CREDENTIALS_PATH")
