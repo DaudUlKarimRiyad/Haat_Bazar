@@ -26,6 +26,9 @@ dist/
 .env.local
 .env.*.local
 .vercel/
+*firebase*.json
+*firebase-adminsdk*.json
+serviceAccountKey*.json
 
 # Editor / OS
 .DS_Store
