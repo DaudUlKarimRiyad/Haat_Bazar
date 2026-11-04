@@ -1,0 +1,143 @@
+{
+  "info": {
+    "_postman_id": "c1f7a4e0-9123-4567-89ab-cdef01234567",
+    "name": "Haat_Bazar (হাট বাজার) REST API",
+    "description": "Full CRUD API Collection for Haat_Bazar Mid-Project Assessment MVP.\nEndpoints: Health, List Batches, Create Batch, Read Single Batch, Update Batch, Delete Batch.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000",
+      "type": "string"
+    },
+    {
+      "key": "listing_id",
+      "value": "a1b2c3d4-0001-4000-8000-000000000001",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "0. Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/health",
+          "host": ["{{base_url}}"],
+          "path": ["api", "health"]
+        },
+        "description": "Check backend health and active database/Firebase status."
+      },
+      "response": []
+    },
+    {
+      "name": "1. Read List (List Produce Batches)",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Accept", "value": "application/json", "type": "text" }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/v1/listings?offset=0&limit=20",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "listings"],
+          "query": [
+            { "key": "offset", "value": "0" },
+            { "key": "limit", "value": "20" },
+            { "key": "category", "value": "Tubers", "disabled": true },
+            { "key": "search", "value": "Potato", "disabled": true }
+          ]
+        },
+        "description": "Get paginated produce batches with total count and optional filters."
+      },
+      "response": []
+    },
+    {
+      "name": "2. Create Produce Batch (POST)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "var jsonData = pm.response.json();",
+              "if (jsonData.id) {",
+              "    pm.collectionVariables.set('listing_id', jsonData.id);",
+              "    console.log('Saved listing_id:', jsonData.id);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"commodity_name\": \"Kew Pineapple (মধুপুর আনারস)\",\n  \"category\": \"Fruits\",\n  \"farmer_name\": \"Motiur Rahman\",\n  \"hub_name\": \"Mymensingh Trishal Hub\",\n  \"total_yield_kg\": 1200,\n  \"available_qty_kg\": 1000,\n  \"farmer_unit_price\": 55,\n  \"b2c_moq_kg\": 2,\n  \"b2b_moq_kg\": 50,\n  \"grade\": \"GRADE_A\",\n  \"harvest_date\": \"2026-11-04\",\n  \"description\": \"Naturally ripened sweet Modhupur pineapples, high brix level.\",\n  \"is_active\": true\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/listings",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "listings"]
+        },
+        "description": "Create a new produce batch listing with Anti-Loss Guard validation."
+      },
+      "response": []
+    },
+    {
+      "name": "3. Read Single Produce Batch (GET)",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Accept", "value": "application/json" }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/v1/listings/{{listing_id}}",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "listings", "{{listing_id}}"]
+        },
+        "description": "Fetch complete specifications and status of a single produce batch."
+      },
+      "response": []
+    },
+    {
+      "name": "4. Update Produce Batch (PATCH)",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"farmer_unit_price\": 58,\n  \"available_qty_kg\": 900,\n  \"description\": \"Price adjusted after digital grading scan at hub.\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/listings/{{listing_id}}",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "listings", "{{listing_id}}"]
+        },
+        "description": "Update price, available inventory, or status for a batch."
+      },
+      "response": []
+    },
+    {
+      "name": "5. Delete Produce Batch (DELETE)",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/v1/listings/{{listing_id}}",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "listings", "{{listing_id}}"]
+        },
+        "description": "Permanently remove a batch listing (returns 204 No Content)."
+      },
+      "response": []
+    }
+  ]
+}
