@@ -19,6 +19,34 @@ def get_firebase_status() -> dict:
     }
 
 
+def clean_private_key(pk: str) -> str:
+    """
+    Repairs PEM private keys that have been distorted by clipboard copy-pasting,
+    browser word-wrapping, or environment variable newline escaping issues.
+    """
+    if not isinstance(pk, str):
+        return pk
+
+    import re
+
+    # 1. Normalize escaped newlines
+    pk = pk.replace("\\n", "\n")
+
+    # 2. Fix distorted/spaced BEGIN and END headers (e.g. 'PRIVATE \n KEY')
+    pk = re.sub(r"-----BEGIN[\s\r\n]+PRIVATE[\s\r\n]+KEY-----", "-----BEGIN PRIVATE KEY-----", pk)
+    pk = re.sub(r"-----END[\s\r\n]+PRIVATE[\s\r\n]+KEY-----", "-----END PRIVATE KEY-----", pk)
+
+    # 3. Clean up the base64 payload between the headers
+    match = re.search(r"-----BEGIN PRIVATE KEY-----(.*?)-----END PRIVATE KEY-----", pk, re.DOTALL)
+    if match:
+        body = match.group(1)
+        body_clean = "".join(body.split())
+        lines = [body_clean[i : i + 64] for i in range(0, len(body_clean), 64)]
+        pk = "-----BEGIN PRIVATE KEY-----\n" + "\n".join(lines) + "\n-----END PRIVATE KEY-----\n"
+
+    return pk
+
+
 def get_firestore_client():
     global _firestore_client, _firebase_init_error
 
@@ -50,12 +78,13 @@ def get_firestore_client():
                 except Exception:
                     # Fallback: sanitize unescaped raw newlines inside multiline string literals
                     import re
-                    sanitized = re.sub(r'(?<!\\)\r?\n', r'\\n', content)
+                    sanitized = re.sub(r"(?<!\\)\r?\n", r"\\n", content)
                     cred_dict = json.loads(sanitized, strict=False)
 
-                # Fix escaped newlines in private_key (common issue when passing env vars)
-                if "private_key" in cred_dict and "\\n" in cred_dict["private_key"]:
-                    cred_dict["private_key"] = cred_dict["private_key"].replace("\\n", "\n")
+                # Clean and repair the private_key PEM structure
+                if "private_key" in cred_dict:
+                    cred_dict["private_key"] = clean_private_key(cred_dict["private_key"])
+
                 cred = credentials.Certificate(cred_dict)
                 logger.info("Initializing Firebase Admin via FIREBASE_CREDENTIALS_JSON env")
             except Exception as e:
