@@ -36,14 +36,33 @@ def find_firebase_credentials() -> str | None:
 
 FIREBASE_CREDENTIALS_PATH = find_firebase_credentials()
 
-# Always use an absolute path for SQLite — the env var may carry a relative path
-_raw_db_url = os.getenv("DATABASE_URL", f"sqlite:///{ROOT_DIR / 'haat_bazar.db'}")
-if _raw_db_url.startswith("sqlite:///") and not _raw_db_url.startswith("sqlite:////"):
-    # Relative sqlite path → make it absolute anchored at project root
+# Detect serverless read-only environment (e.g. Vercel, AWS Lambda)
+IS_SERVERLESS = bool(
+    os.getenv("VERCEL")
+    or os.getenv("AWS_LAMBDA_FUNCTION_NAME")
+    or not os.access(str(ROOT_DIR), os.W_OK)
+)
+
+# Normalize SQLite database URL — serverless environments require /tmp writable directory
+_raw_db_url = os.getenv("DATABASE_URL")
+if not _raw_db_url:
+    if IS_SERVERLESS:
+        DATABASE_URL = "sqlite:////tmp/haat_bazar.db"
+    else:
+        DATABASE_URL = f"sqlite:///{ROOT_DIR / 'haat_bazar.db'}"
+elif _raw_db_url.startswith("sqlite:///") and not _raw_db_url.startswith("sqlite:////"):
+    # Relative sqlite path
     _rel = _raw_db_url[len("sqlite:///"):]
-    _abs = str(ROOT_DIR / _rel) if _rel else str(ROOT_DIR / "haat_bazar.db")
-    DATABASE_URL = f"sqlite:///{_abs}"
+    if IS_SERVERLESS:
+        DATABASE_URL = f"sqlite:////tmp/{Path(_rel).name if _rel else 'haat_bazar.db'}"
+    else:
+        _abs = str(ROOT_DIR / _rel) if _rel else str(ROOT_DIR / "haat_bazar.db")
+        DATABASE_URL = f"sqlite:///{_abs}"
 else:
-    DATABASE_URL = _raw_db_url
+    # If explicit non-/tmp sqlite path is passed but running on read-only serverless filesystem
+    if IS_SERVERLESS and _raw_db_url.startswith("sqlite:////") and not _raw_db_url.startswith("sqlite:////tmp/"):
+        DATABASE_URL = "sqlite:////tmp/haat_bazar.db"
+    else:
+        DATABASE_URL = _raw_db_url
 
 FIRESTORE_COLLECTION = os.getenv("FIRESTORE_COLLECTION", "product_listings")

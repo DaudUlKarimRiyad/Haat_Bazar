@@ -11,15 +11,18 @@ engine = create_engine(DATABASE_URL, connect_args=connect_args)
 
 def create_db_and_tables():
     # Import models so SQLModel metadata registers the table
-    from app.listings.models import ProductListing
-    SQLModel.metadata.create_all(engine)
-    logger.info("Database tables verified.")
+    try:
+        from app.listings.models import ProductListing
+        SQLModel.metadata.create_all(engine)
+        logger.info("Database tables verified.")
 
-    # Seed initial demo batches if empty
-    with Session(engine) as session:
-        has_items = session.exec(select(ProductListing)).first()
-        if not has_items:
-            seed_initial_data(session)
+        # Seed initial demo batches if empty
+        with Session(engine) as session:
+            has_items = session.exec(select(ProductListing)).first()
+            if not has_items:
+                seed_initial_data(session)
+    except Exception as exc:
+        logger.warning("Could not initialize local SQLite tables: %s", exc)
 
 def seed_initial_data(session: Session):
     from app.listings.models import ProductListing

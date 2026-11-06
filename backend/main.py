@@ -56,7 +56,7 @@ async def unhandled_error(request: Request, exc: Exception) -> JSONResponse:
     logger.error("Unhandled error on %s %s", request.method, request.url.path, exc_info=exc)
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        content={"detail": "Internal server error"},
+        content={"detail": f"Internal server error: {type(exc).__name__} ({str(exc)})"},
     )
 
 # Include Feature Routers

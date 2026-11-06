@@ -25,7 +25,21 @@ def get_firestore_client():
         cred = None
         if FIREBASE_JSON_CONTENT:
             try:
-                cred_dict = json.loads(FIREBASE_JSON_CONTENT)
+                content = FIREBASE_JSON_CONTENT.strip()
+                # Handle possible surrounding single or double quotes from dashboard copy-paste
+                if (content.startswith("'") and content.endswith("'")) or (content.startswith('"') and content.endswith('"')):
+                    content = content[1:-1]
+                # Decode base64 if user encoded the JSON
+                if not content.startswith("{"):
+                    import base64
+                    try:
+                        content = base64.b64decode(content).decode("utf-8")
+                    except Exception:
+                        pass
+                cred_dict = json.loads(content)
+                # Fix escaped newlines in private_key (common issue when passing env vars)
+                if "private_key" in cred_dict and "\\n" in cred_dict["private_key"]:
+                    cred_dict["private_key"] = cred_dict["private_key"].replace("\\n", "\n")
                 cred = credentials.Certificate(cred_dict)
                 logger.info("Initializing Firebase Admin via FIREBASE_CREDENTIALS_JSON env")
             except Exception as e:
