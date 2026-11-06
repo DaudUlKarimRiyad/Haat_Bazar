@@ -14,7 +14,13 @@ load_dotenv(BACKEND_DIR / ".env")
 
 # Discover Firebase Service Account JSON credentials
 FIREBASE_CRED_ENV = os.getenv("FIREBASE_CREDENTIALS_PATH")
-FIREBASE_JSON_CONTENT = os.getenv("FIREBASE_CREDENTIALS_JSON")
+FIREBASE_JSON_CONTENT = (
+    os.getenv("FIREBASE_CREDENTIALS_JSON")
+    or os.getenv("FIREBASE_SERVICE_ACCOUNT")
+    or os.getenv("FIREBASE_CREDENTIALS")
+    or os.getenv("FIREBASE_CONFIG_JSON")
+    or os.getenv("FIREBASE_KEY")
+)
 
 def find_firebase_credentials() -> str | None:
     if FIREBASE_CRED_ENV and os.path.exists(FIREBASE_CRED_ENV):

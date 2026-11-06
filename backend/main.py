@@ -36,6 +36,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Header Middleware: indicates which active database backend served the request
+@app.middleware("http")
+async def add_database_backend_header(request: Request, call_next):
+    response = await call_next(request)
+    from app.listings.repository import _probe_firestore
+    backend = "Firestore" if _probe_firestore() else "SQLite"
+    response.headers["X-Database-Backend"] = backend
+    return response
+
 # Exception Handlers
 @app.exception_handler(ListingNotFoundError)
 async def listing_not_found_handler(request: Request, exc: ListingNotFoundError) -> JSONResponse:
@@ -67,14 +76,18 @@ create_db_and_tables()
 
 @app.get("/api/health")
 def health() -> dict:
+    from app.firebase import get_firebase_status, get_firestore_client
     firestore_client = get_firestore_client()
     has_firestore = firestore_client is not None
+    status_info = get_firebase_status()
     return {
         "status": "ok",
         "service": "Haat_Bazar Agricultural Marketplace API",
-        "firebase_configured": bool(FIREBASE_CREDENTIALS_PATH),
-        "firebase_active": has_firestore,
         "mode": "Firestore Cloud" if has_firestore else "SQLite Resilient Local",
+        "firebase_active": has_firestore,
+        "firebase_configured": status_info["has_credentials"],
+        "firebase_source": status_info["source"],
+        "firebase_error": status_info["error"],
     }
 
 # Production SPA serving: serve frontend/dist if available

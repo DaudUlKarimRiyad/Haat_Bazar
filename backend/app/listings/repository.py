@@ -203,19 +203,16 @@ _USE_FIRESTORE: Optional[bool] = None  # None = not yet determined
 
 def _probe_firestore() -> bool:
     """
-    Called once at import time (or first request).
-    Returns True if Firestore is reachable; logs the outcome clearly.
+    Checks if Firestore is reachable. Caches True once successful.
+    If it fails, allows retrying on future requests so container cold
+    boots do not lock out Firestore permanently.
     """
     global _USE_FIRESTORE
-    if _USE_FIRESTORE is not None:
-        return _USE_FIRESTORE
+    if _USE_FIRESTORE is True:
+        return True
 
     client = get_firestore_client()
     if client is None:
-        logger.warning(
-            "⚠️  No Firebase credentials found — all writes go to SQLite (local only)."
-        )
-        _USE_FIRESTORE = False
         return False
 
     try:
@@ -225,29 +222,20 @@ def _probe_firestore() -> bool:
             FIRESTORE_COLLECTION,
         )
         _USE_FIRESTORE = True
+        return True
     except Exception as exc:
         logger.warning(
-            "⚠️  Firestore probe failed (%s). "
-            "Make sure Cloud Firestore API is enabled at "
-            "https://console.firebase.google.com/project/haat-bazar-bd129/firestore — "
-            "falling back to SQLite.",
+            "⚠️  Firestore probe failed (%s) — operating in SQLite fallback.",
             exc,
         )
-        _USE_FIRESTORE = False
-
-    return _USE_FIRESTORE
-
-
-# Run the probe eagerly at module load so the log appears on server startup
-_probe_firestore()
+        return False
 
 
 def get_repository(session: Session) -> BaseListingRepository:
     """
     Repository Provider:
     Returns FirestoreListingRepository when Firestore is reachable,
-    otherwise returns SQLiteListingRepository. The reachability check
-    is done once at startup, not on every request.
+    otherwise returns SQLiteListingRepository.
     """
     if _probe_firestore():
         client = get_firestore_client()
