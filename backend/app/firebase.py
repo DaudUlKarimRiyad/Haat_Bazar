@@ -43,7 +43,16 @@ def get_firestore_client():
                         content = base64.b64decode(content).decode("utf-8")
                     except Exception:
                         pass
-                cred_dict = json.loads(content)
+
+                # Parse JSON with strict=False to tolerate literal control characters/newlines
+                try:
+                    cred_dict = json.loads(content, strict=False)
+                except Exception:
+                    # Fallback: sanitize unescaped raw newlines inside multiline string literals
+                    import re
+                    sanitized = re.sub(r'(?<!\\)\r?\n', r'\\n', content)
+                    cred_dict = json.loads(sanitized, strict=False)
+
                 # Fix escaped newlines in private_key (common issue when passing env vars)
                 if "private_key" in cred_dict and "\\n" in cred_dict["private_key"]:
                     cred_dict["private_key"] = cred_dict["private_key"].replace("\\n", "\n")
