@@ -35,5 +35,15 @@ def find_firebase_credentials() -> str | None:
     return None
 
 FIREBASE_CREDENTIALS_PATH = find_firebase_credentials()
-DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite:///{ROOT_DIR / 'haat_bazar.db'}")
+
+# Always use an absolute path for SQLite — the env var may carry a relative path
+_raw_db_url = os.getenv("DATABASE_URL", f"sqlite:///{ROOT_DIR / 'haat_bazar.db'}")
+if _raw_db_url.startswith("sqlite:///") and not _raw_db_url.startswith("sqlite:////"):
+    # Relative sqlite path → make it absolute anchored at project root
+    _rel = _raw_db_url[len("sqlite:///"):]
+    _abs = str(ROOT_DIR / _rel) if _rel else str(ROOT_DIR / "haat_bazar.db")
+    DATABASE_URL = f"sqlite:///{_abs}"
+else:
+    DATABASE_URL = _raw_db_url
+
 FIRESTORE_COLLECTION = os.getenv("FIRESTORE_COLLECTION", "product_listings")

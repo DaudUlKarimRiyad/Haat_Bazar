@@ -52,10 +52,10 @@ const errorMessage = async (res: Response): Promise<string> => {
   return `Request failed with status ${res.status}`
 }
 
-// Standard fetch wrapper with fallback to offline storage for demo resilience
+// Standard fetch wrapper with 8-second timeout; throws on failure so callers see real errors
 const request = async <T>(url: string, options?: RequestInit): Promise<T> => {
   const controller = new AbortController()
-  const timeoutId = setTimeout(() => controller.abort(), 2000)
+  const timeoutId = setTimeout(() => controller.abort(), 8000)
 
   try {
     const res = await fetch(url, {
@@ -71,7 +71,7 @@ const request = async <T>(url: string, options?: RequestInit): Promise<T> => {
     return res.status === 204 ? (undefined as T) : await res.json()
   } catch (err: unknown) {
     clearTimeout(timeoutId)
-    // If backend isn't reachable during standalone frontend demo, throw to trigger fallback
+    // Re-throw so the calling method can decide whether to use a fallback
     throw err
   }
 }
@@ -129,64 +129,28 @@ export const apiService = {
     }
   },
 
-  // Create Single
+  // Create Single — does NOT fall back to localStorage; write failures must be visible
   createListing: async (data: ListingInput): Promise<ProductListing> => {
-    try {
-      return await request<ProductListing>(BASE, {
-        method: "POST",
-        body: JSON.stringify(data),
-      })
-    } catch {
-      const items = getLocalStore()
-      const now = new Date().toISOString()
-      const newListing: ProductListing = {
-        ...data,
-        id: crypto.randomUUID ? crypto.randomUUID() : `item-${Date.now()}`,
-        created_at: now,
-        updated_at: now,
-      }
-      items.unshift(newListing)
-      saveLocalStore(items)
-      return newListing
-    }
+    return await request<ProductListing>(BASE, {
+      method: "POST",
+      body: JSON.stringify(data),
+    })
   },
 
-  // Update Single
+  // Update Single — does NOT fall back to localStorage; write failures must be visible
   updateListing: async (
     id: string,
     patch: ListingPatch
   ): Promise<ProductListing> => {
-    try {
-      return await request<ProductListing>(`${BASE}/${id}`, {
-        method: "PATCH",
-        body: JSON.stringify(patch),
-      })
-    } catch {
-      const items = getLocalStore()
-      const index = items.findIndex((i) => i.id === id)
-      if (index === -1) {
-        throw new Error(`Commodity listing with id '${id}' not found`)
-      }
-      const updated: ProductListing = {
-        ...items[index],
-        ...patch,
-        updated_at: new Date().toISOString(),
-      }
-      items[index] = updated
-      saveLocalStore(items)
-      return updated
-    }
+    return await request<ProductListing>(`${BASE}/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(patch),
+    })
   },
 
-  // Delete Single
+  // Delete Single — does NOT fall back to localStorage; write failures must be visible
   deleteListing: async (id: string): Promise<void> => {
-    try {
-      await request<void>(`${BASE}/${id}`, { method: "DELETE" })
-    } catch {
-      const items = getLocalStore()
-      const filtered = items.filter((i) => i.id !== id)
-      saveLocalStore(filtered)
-    }
+    await request<void>(`${BASE}/${id}`, { method: "DELETE" })
   },
 
   // Reset to initial demo seed (convenient utility for assessment viva)

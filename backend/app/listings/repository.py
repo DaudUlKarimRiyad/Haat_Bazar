@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 import uuid
 from abc import ABC, abstractmethod
@@ -194,23 +196,63 @@ class SQLiteListingRepository(BaseListingRepository):
         return True
 
 
+
+# ── Startup probe: resolve once, avoid per-request Firestore round-trip ───────
+_USE_FIRESTORE: Optional[bool] = None  # None = not yet determined
+
+
+def _probe_firestore() -> bool:
+    """
+    Called once at import time (or first request).
+    Returns True if Firestore is reachable; logs the outcome clearly.
+    """
+    global _USE_FIRESTORE
+    if _USE_FIRESTORE is not None:
+        return _USE_FIRESTORE
+
+    client = get_firestore_client()
+    if client is None:
+        logger.warning(
+            "⚠️  No Firebase credentials found — all writes go to SQLite (local only)."
+        )
+        _USE_FIRESTORE = False
+        return False
+
+    try:
+        client.collection(FIRESTORE_COLLECTION).limit(1).get()
+        logger.info(
+            "✅ Firestore reachable — using FirestoreListingRepository (collection: '%s')",
+            FIRESTORE_COLLECTION,
+        )
+        _USE_FIRESTORE = True
+    except Exception as exc:
+        logger.warning(
+            "⚠️  Firestore probe failed (%s). "
+            "Make sure Cloud Firestore API is enabled at "
+            "https://console.firebase.google.com/project/haat-bazar-bd129/firestore — "
+            "falling back to SQLite.",
+            exc,
+        )
+        _USE_FIRESTORE = False
+
+    return _USE_FIRESTORE
+
+
+# Run the probe eagerly at module load so the log appears on server startup
+_probe_firestore()
+
+
 def get_repository(session: Session) -> BaseListingRepository:
     """
     Repository Provider:
-    Attempts to initialize Firebase Firestore using the credentials JSON.
-    If Firestore is available, returns FirestoreListingRepository.
-    Otherwise, gracefully falls back to SQLiteListingRepository.
+    Returns FirestoreListingRepository when Firestore is reachable,
+    otherwise returns SQLiteListingRepository. The reachability check
+    is done once at startup, not on every request.
     """
-    firestore_client = get_firestore_client()
-    if firestore_client is not None:
-        try:
-            # Check if Firestore API is enabled by doing a lightweight test
-            firestore_client.collection(FIRESTORE_COLLECTION).limit(1).get()
-            return FirestoreListingRepository(firestore_client)
-        except Exception as e:
-            logger.warning(
-                "Firebase Firestore API not yet enabled on Google Cloud (%s). Operating in SQLite mode.",
-                e,
-            )
+    if _probe_firestore():
+        client = get_firestore_client()
+        if client is not None:
+            return FirestoreListingRepository(client)
 
     return SQLiteListingRepository(session)
+
