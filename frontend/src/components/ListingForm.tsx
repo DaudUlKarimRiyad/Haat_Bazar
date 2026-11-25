@@ -135,7 +135,7 @@ export function ListingForm({
                 { min: 2, message: "Must be at least 2 characters" },
               ]}
             >
-              <Input placeholder="e.g. Diamant Potato (ডায়মন্ড আলু), Roma Tomato" />
+              <Input disabled={initialValues?.can_delete === false} placeholder="e.g. Diamant Potato (ডায়মন্ড আলু), Roma Tomato" />
             </Form.Item>
           </Col>
 

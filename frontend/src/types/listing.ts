@@ -12,6 +12,10 @@ export type ProduceCategory =
 
 export interface ProductListing {
   id: string
+  can_update?: boolean
+  can_delete?: boolean
+  group_id?: string
+  assignee?: string
   farmer_id?: string
   farmer_name: string
   hub_id?: string

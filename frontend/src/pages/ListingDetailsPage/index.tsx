@@ -34,6 +34,9 @@ import {
 import { useEffect, useState } from "react"
 import { useNavigate, useParams } from "react-router"
 import { ListingForm } from "../../components/ListingForm"
+import { useRemote } from "../../components/Remote"
+import { request } from "../../services/http"
+import type { Group } from "../Groups"
 import { apiService } from "../../services/api"
 import type {
   ListingInput,
@@ -52,6 +55,7 @@ export function ListingDetailsPage() {
   const navigate = useNavigate()
   const { message } = AntApp.useApp()
 
+  const groups = useRemote<Group[]>("/groups")
   const [listing, setListing] = useState<ProductListing | null>(null)
   const [loading, setLoading] = useState(true)
   const [isEditing, setIsEditing] = useState(false)
@@ -64,18 +68,25 @@ export function ListingDetailsPage() {
   const [estDistanceKm, setEstDistanceKm] = useState<number>(15)
 
   useEffect(() => {
+    let current = true
+    setLoading(true)
+    setIsEditing(false)
+    setListing(null)
+    setError("")
     const fetchItem = async () => {
       try {
         const data = await apiService.getListing(listingId ?? "")
+        if (!current) return
         setListing(data)
         setOrderQty(data.b2c_moq_kg || 2)
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to load listing")
+        if (current) setError(err instanceof Error ? err.message : "Failed to load listing")
       } finally {
-        setLoading(false)
+        if (current) setLoading(false)
       }
     }
     fetchItem()
+    return () => { current = false }
   }, [listingId])
 
   // Update order quantity when switching between B2C and B2B
@@ -200,10 +211,10 @@ export function ListingDetailsPage() {
         <Space>
           {!isEditing ? (
             <>
-              <Button icon={<EditOutlined />} onClick={() => setIsEditing(true)}>
+              <Button disabled={!listing.can_update} icon={<EditOutlined />} onClick={() => setIsEditing(true)}>
                 Edit Batch Details
               </Button>
-              <Popconfirm
+              {listing.can_delete && <Popconfirm
                 title="Delete this listing?"
                 description="This will permanently delete the batch listing from the repository."
                 okText="Delete"
@@ -213,13 +224,30 @@ export function ListingDetailsPage() {
                 <Button danger icon={<DeleteOutlined />}>
                   Delete
                 </Button>
-              </Popconfirm>
+              </Popconfirm>}
             </>
           ) : (
             <Button onClick={() => setIsEditing(false)}>Cancel Edit</Button>
           )}
         </Space>
       </Flex>
+
+      {!listing.group_id && groups.data?.some(g => g.create_batches) && <form className="workspace toolbar" onSubmit={async e => {
+        e.preventDefault()
+        const gid = new FormData(e.currentTarget).get("group")
+        if (!gid || !window.confirm("Share this batch? Group permissions will apply, and the group owner will control renaming and deletion.")) return
+        setSaving(true)
+        try {
+          await request("/groups/"+gid+"/batches/"+listing.id, "POST")
+          setListing(await apiService.getListing(listing.id))
+          message.success("Batch shared with the group.")
+        } catch (err) {
+          message.error(err instanceof Error ? err.message : "Could not share batch.")
+        } finally { setSaving(false) }
+      }}><label>Share private batch with a group <select name="group" required defaultValue="">
+        <option value="" disabled>Choose group</option>{groups.data.filter(g => g.create_batches).map(g =>
+          <option key={g.id} value={g.id}>{g.name}</option>)}</select></label><button disabled={saving}>Share batch</button></form>}
+      {listing.group_id && <Button type="link" onClick={() => navigate("/groups/"+listing.group_id)}>Open grower group</Button>}
 
       {/* Editing View */}
       {isEditing ? (

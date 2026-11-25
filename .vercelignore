@@ -1,0 +1,14 @@
+.env
+.env.*
+*.db
+**/*.db
+*firebase*.json
+**/*adminsdk*.json
+serviceAccountKey*.json
+venv
+**/node_modules
+**/__pycache__
+**/.pytest_cache
+docs
+postman
+submission-private

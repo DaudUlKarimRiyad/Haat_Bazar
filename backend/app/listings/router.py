@@ -1,49 +1,42 @@
 from typing import Annotated, Optional
+from fastapi import APIRouter, Depends, Query, Request
 
-from fastapi import APIRouter, Query, status
-
-from app.listings.dependencies import ListingDep, ServiceDep
-from app.listings.models import ProductListing
+from app.access import DB, User, OWNER, audit, group_access
 from app.listings.schemas import ListingCreate, ListingPage, ListingRead, ListingUpdate
+from app.listings.service import ListingService
+from app.models import SharedBatch
 
 router = APIRouter(prefix="/api/v1/listings", tags=["listings"])
 
-# CREATE: Add a new produce batch listing
-@router.post("", response_model=ListingRead, status_code=status.HTTP_201_CREATED)
-def create_listing(data: ListingCreate, service: ServiceDep) -> ProductListing:
-    return service.create_listing(data)
+def listing_service(db: DB, user: User):
+    return ListingService(db, user)
 
-# READ LIST: Get batch listings with pagination and filters
+Service = Annotated[ListingService, Depends(listing_service)]
+
+@router.post("", response_model=ListingRead, status_code=201)
+def create_listing(data: ListingCreate, service: Service):
+    return service.create(data)
+
 @router.get("", response_model=ListingPage)
-def list_listings(
-    service: ServiceDep,
-    offset: Annotated[int, Query(ge=0)] = 0,
-    limit: Annotated[int, Query(ge=1, le=100)] = 20,
-    category: Optional[str] = Query(default=None),
-    search: Optional[str] = Query(default=None),
-) -> ListingPage:
-    return service.list_listings(
-        offset=offset,
-        limit=limit,
-        category=category,
-        search=search,
-    )
+def list_listings(service: Service, offset: int = Query(0, ge=0), limit: int = Query(20, ge=1, le=100),
+                  category: Optional[str] = None, search: Optional[str] = None):
+    rows, total = service.repo.list_all(offset, limit, category, search)
+    return ListingPage(items=[service.describe(row) for row in rows], total=total, offset=offset, limit=limit)
 
-# READ SINGLE: Get full details of one produce batch
 @router.get("/{listing_id}", response_model=ListingRead)
-def get_listing(listing: ListingDep) -> ProductListing:
-    return listing
+def get_listing(listing_id: str, service: Service):
+    return service.describe(service.get(listing_id))
 
-# UPDATE: Modify pricing, available volume, grade, or status
 @router.patch("/{listing_id}", response_model=ListingRead)
-def update_listing(
-    listing_id: str,
-    data: ListingUpdate,
-    service: ServiceDep,
-) -> ProductListing:
-    return service.update_listing(listing_id, data)
+def update_listing(listing_id: str, data: ListingUpdate, service: Service):
+    return service.update(listing_id, data)
 
-# DELETE: Remove batch listing
-@router.delete("/{listing_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_listing(listing_id: str, service: ServiceDep) -> None:
-    service.delete_listing(listing_id)
+@router.delete("/{listing_id}", status_code=204)
+def delete_listing(listing_id: str, service: Service, db: DB, user: User, request: Request):
+    item = service.get(listing_id, lock=True)
+    shared = db.get(SharedBatch, listing_id)
+    if shared:
+        group_access(db, user, shared.group_id, OWNER, lock=True)
+    audit(db, request, "delete", user.id, item.id, item.commodity_name)
+    db.delete(item)
+    db.commit()

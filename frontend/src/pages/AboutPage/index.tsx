@@ -60,7 +60,7 @@ export function AboutPage() {
           >
             <Descriptions bordered size="small" column={1}>
               <Descriptions.Item label={<Tag color="green">GET</Tag>}>
-                <code>/api/v1/listings</code> (List all batches with pagination & filters)
+                <code>/api/v1/listings</code> (List accessible batches with pagination & filters)
               </Descriptions.Item>
               <Descriptions.Item label={<Tag color="blue">POST</Tag>}>
                 <code>/api/v1/listings</code> (Create new produce batch)
@@ -103,7 +103,7 @@ export function AboutPage() {
           <Card size="small" hoverable>
             <Typography.Text strong>Database</Typography.Text>
             <div style={{ color: "#595959", fontSize: 13, marginTop: 4 }}>
-              SQLModel / SQLAlchemy, PostgreSQL + PostGIS (Production), SQLite (Dev)
+              SQLModel / SQLAlchemy, PostgreSQL (Production), SQLite (Dev)
             </div>
           </Card>
         </Col>

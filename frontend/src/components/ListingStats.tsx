@@ -10,10 +10,9 @@ import type { ProductListing } from "../types/listing"
 interface ListingStatsProps {
   listings: ProductListing[]
   total: number
-  onResetDemo: () => void
 }
 
-export function ListingStats({ listings, total, onResetDemo }: ListingStatsProps) {
+export function ListingStats({ listings, total }: ListingStatsProps) {
   const activeListings = listings.filter((l) => l.is_active)
   const totalVolumeKg = activeListings.reduce(
     (acc, l) => acc + (Number(l.available_qty_kg) || 0),
@@ -78,13 +77,7 @@ export function ListingStats({ listings, total, onResetDemo }: ListingStatsProps
                 value={uniqueCategories}
                 prefix={<TagsOutlined style={{ color: "#722ed1" }} />}
               />
-              <Popconfirm
-                title="Reset demo data to initial seed?"
-                okText="Reset"
-                onConfirm={onResetDemo}
-              >
-                <Button size="small" icon={<ReloadOutlined />} type="text" title="Reset Demo Data" />
-              </Popconfirm>
+
             </div>
           </Card>
         </Col>

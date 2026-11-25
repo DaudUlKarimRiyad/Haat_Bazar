@@ -1,33 +1,29 @@
-import logging
-from sqlmodel import Session, SQLModel, create_engine, select
+from sqlalchemy import event
+from sqlalchemy.pool import NullPool
+from sqlmodel import Session, SQLModel, create_engine
 
 from app.config import DATABASE_URL
+from app import models
+from app.listings.models import ProductListing
 
-logger = logging.getLogger("haat_bazar.database")
+if DATABASE_URL.startswith("sqlite:"):
+    engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 
-# SQLite connection args
-connect_args = {"check_same_thread": False} if "sqlite" in DATABASE_URL else {}
-engine = create_engine(DATABASE_URL, connect_args=connect_args)
+    @event.listens_for(engine, "connect")
+    def sqlite_foreign_keys(connection, _):
+        connection.execute("PRAGMA foreign_keys=ON")
+else:
+    engine = create_engine(DATABASE_URL, poolclass=NullPool)
 
 def create_db_and_tables():
-    # Import models so SQLModel metadata registers the table
-    try:
-        from app.listings.models import ProductListing
-        SQLModel.metadata.create_all(engine)
-        logger.info("Database tables verified.")
+    SQLModel.metadata.create_all(engine)
 
-        # Seed initial demo batches if empty
-        with Session(engine) as session:
-            has_items = session.exec(select(ProductListing)).first()
-            if not has_items:
-                seed_initial_data(session)
-    except Exception as exc:
-        logger.warning("Could not initialize local SQLite tables: %s", exc)
+def get_session():
+    with Session(engine) as session:
+        yield session
 
-def seed_initial_data(session: Session):
-    from app.listings.models import ProductListing
-
-    initial_items = [
+def sample_listings():
+    return [
         ProductListing(
             id="a1b2c3d4-0001-4000-8000-000000000001",
             farmer_name="Md. Rafiqul Islam",
@@ -119,11 +115,3 @@ def seed_initial_data(session: Session):
             updated_at="2026-11-03T08:00:00Z",
         ),
     ]
-    for item in initial_items:
-        session.add(item)
-    session.commit()
-    logger.info("Seeded %d initial produce batch listings into database.", len(initial_items))
-
-def get_session():
-    with Session(engine) as session:
-        yield session

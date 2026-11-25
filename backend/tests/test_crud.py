@@ -1,32 +1,22 @@
-import pytest
-from fastapi.testclient import TestClient
-
-import sys
-from pathlib import Path
-backend_dir = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(backend_dir))
-
-from main import app
-
-client = TestClient(app)
-
-def test_health():
+def test_health(client):
     res = client.get("/api/health")
     assert res.status_code == 200
     data = res.json()
     assert data["status"] == "ok"
     assert "service" in data
 
-def test_read_listings_list():
+def test_read_listings_list(account):
+    client, _, _ = account("Farmer")
     res = client.get("/api/v1/listings")
     assert res.status_code == 200
     data = res.json()
     assert "items" in data
     assert "total" in data
-    assert data["total"] >= 1
-    assert len(data["items"]) >= 1
+    assert data["total"] == 0
+    assert data["items"] == []
 
-def test_create_read_update_delete_lifecycle():
+def test_create_read_update_delete_lifecycle(account):
+    client, _, _ = account("Farmer")
     # 1. CREATE
     payload = {
         "commodity_name": "Rangpur Sweet Potato (মিষ্টি আলু)",
@@ -77,7 +67,8 @@ def test_create_read_update_delete_lifecycle():
     verify_res = client.get(f"/api/v1/listings/{listing_id}")
     assert verify_res.status_code == 404
 
-def test_business_rules_validation():
+def test_business_rules_validation(account):
+    client, _, _ = account("Farmer")
     # Attempt available_qty > total_yield
     invalid_payload = {
         "commodity_name": "Invalid Batch",

@@ -25,6 +25,63 @@
 
 ---
 
+## Submission build
+
+Haat_Bazar lets growers manage private produce batches and share batches with a cooperative. The React client and FastAPI API share one origin. Sign in at `/signin`, manage devices and passwords at `/account`, and open `/admin` with an administrator account. Interactive API documentation is at `/api/docs`.
+
+### Instructor accounts
+
+The provisioning command below creates these accounts and five sample batches. Use the email as the login ID. The private submission form and instructor PDF carry the passwords.
+
+| Account ID | Login email | Role | Demonstration |
+| --- | --- | --- | --- |
+| demo-admin1 | admin1@haat.example | admin | User management, moderation, audit and CSV exports |
+| demo-admin2 | admin2@haat.example | admin | Protected administrator account |
+| demo-grower1 | grower1@haat.example | user | Owns the Bogura Growers Cooperative |
+| demo-grower2 | grower2@haat.example | user | Creates and edits cooperative batches |
+| demo-grower3 | grower3@haat.example | user | Reads and assigns cooperative batches |
+
+Open **Groups → Bogura Growers Cooperative** to compare permissions across accounts. A private batch is visible to its creator. Group access follows current membership, including for the original creator of a shared batch. Owners can rename and delete shared batches and manage members. Administrators moderate across accounts through their dashboard. Deleting a group also deletes its shared batches.
+
+### Run locally
+
+From the repository root, create a virtual environment, install the requirements and configure the variables in [.env.example](.env.example) in a private `.env` file. Generate two independent random values for `JWT_SECRET` and `PASSWORD_PEPPER` using `openssl rand -hex 32` twice. Keep the pepper stable across deployments.
+
+```sh
+python3 -m venv venv
+venv/bin/python -m pip install -r backend/requirements.txt
+venv/bin/python backend/provision.py --demo
+venv/bin/python -m uvicorn main:app --app-dir backend --reload
+```
+
+The provisioner prompts privately for five passwords on first use. Subsequent runs preserve existing credentials. The development database defaults to SQLite. Start the frontend in a second terminal and open the localhost URL printed by Vite.
+
+```sh
+npm ci --prefix frontend
+npm run dev --prefix frontend
+```
+
+### Deploy and verify on Vercel
+
+1. Use the repository root as the Vercel project root. The two services and SPA deep-link rewrites are in [vercel.json](vercel.json). The frontend calls the relative `/api/v1` path.
+2. Configure a hosted PostgreSQL `DATABASE_URL` with TLS, `FRONTEND_ORIGIN` equal to the exact public HTTPS frontend origin, and the two server secrets. Vercel must use hosted PostgreSQL. Use separate databases and secrets for previews that need writable demo data.
+3. From a trusted terminal with the same backend settings, run `venv/bin/python backend/provision.py --demo` once against the target database. Only verified account owners should receive private legacy records. Existing unowned SQL rows are available through admin moderation. To copy old Firestore documents into SQL, install `google-cloud-firestore` in the provisioning environment, set `FIREBASE_CREDENTIALS_PATH` to the private service-account file, and run `venv/bin/python backend/provision.py --import-firestore`. Repeated imports skip existing IDs.
+4. Deploy the project, open `/api/health` and `/api/docs`, and sign in as a grower. Reload a group deep link, create a batch, sign out, and compare access from a second account. Verify moderation, filtered exports and immediate session revocation with an admin. Reload after a redeploy to verify persistence.
+
+### Automated checks
+
+```sh
+venv/bin/python -m pip install pytest httpx
+venv/bin/python -m pytest -q backend/tests
+npm run build --prefix frontend
+```
+
+The tests use a disposable SQLite database and fresh signing secrets. Login issues a 15-minute access JWT and a rotating HttpOnly cookie. Password changes, bans, role changes and session revocation invalidate existing access on the next protected request. The dashboard records failed logins by account and IP.
+
+## Original project design
+
+The original design below describes the broader marketplace and planned infrastructure. The submission implements produce listings, the pricing calculator, accounts, groups and administration.
+
 ## 1. Project Overview & Socio-Economic Context
 
 **Haat_Bazar (হাট বাজার)** is an agricultural disintermediation marketplace connecting rural producers directly with retail households (B2C) and commercial bulk wholesalers (B2B). 

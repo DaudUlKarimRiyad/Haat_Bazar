@@ -91,6 +91,7 @@ export function ListingCard({
         <Space size={6}>
           <Switch
             size="small"
+            disabled={!listing.can_update}
             checked={listing.is_active}
             onChange={() => onToggleActive(listing)}
             title={listing.is_active ? "Active listing" : "Inactive / Sold out"}
@@ -202,7 +203,7 @@ export function ListingCard({
         >
           View Details
         </Button>
-        <Popconfirm
+        {listing.can_delete && <Popconfirm
           title="Delete Batch Listing"
           description="Are you sure you want to delete this produce batch listing?"
           okText="Delete"
@@ -210,7 +211,7 @@ export function ListingCard({
           onConfirm={() => onDelete(listing.id)}
         >
           <Button danger icon={<DeleteOutlined />} />
-        </Popconfirm>
+        </Popconfirm>}
       </Flex>
     </Card>
   )

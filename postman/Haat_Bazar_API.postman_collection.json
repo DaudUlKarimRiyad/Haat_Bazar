@@ -2,8 +2,12 @@
   "info": {
     "_postman_id": "c1f7a4e0-9123-4567-89ab-cdef01234567",
     "name": "Haat_Bazar (হাট বাজার) REST API",
-    "description": "Full CRUD API Collection for Haat_Bazar Mid-Project Assessment MVP.\nEndpoints: Health, List Batches, Create Batch, Read Single Batch, Update Batch, Delete Batch.",
+    "description": "Sign in with private environment variables email and password, then run authenticated batch CRUD.\nEndpoints: Health, List Batches, Create Batch, Read Single Batch, Update Batch, Delete Batch.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{access_token}}", "type": "string" }]
   },
   "variable": [
     {
@@ -28,9 +32,22 @@
           "host": ["{{base_url}}"],
           "path": ["api", "health"]
         },
-        "description": "Check backend health and active database/Firebase status."
+        "description": "Check backend health and database connectivity."
       },
       "response": []
+    },
+    {
+      "name": "Sign in",
+      "request": {
+        "auth": { "type": "noauth" },
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\"email\":\"{{email}}\",\"password\":\"{{password}}\"}" },
+        "url": "{{base_url}}/api/v1/auth/login"
+      },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "if (pm.response.code === 200) pm.environment.set('access_token', pm.response.json().access_token);"
+      ] } }]
     },
     {
       "name": "1. Read List (List Produce Batches)",

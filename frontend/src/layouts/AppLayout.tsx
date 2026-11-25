@@ -9,14 +9,17 @@ import { Flex, Layout, Menu, Switch, Tag, Typography } from "antd"
 import { Link, Outlet, useLocation } from "react-router"
 import { useTheme } from "../context/ThemeContext"
 
+import { useSession } from "../services/http"
+
 export function AppLayout() {
+  const session = useSession()!
   const { pathname } = useLocation()
   const { darkMode, toggleDark } = useTheme()
 
   const getSelectedKey = () => {
     if (pathname === "/about") return "about"
     if (pathname === "/create") return "create"
-    return "listings"
+    return pathname.split("/")[1] || "listings"
   }
 
   return (
@@ -46,10 +49,6 @@ export function AppLayout() {
           </div>
         </Link>
 
-        <Tag color="success" style={{ marginLeft: 8, fontSize: 11, border: "none" }}>
-          MVP v1.0
-        </Tag>
-
         <Menu
           theme="dark"
           mode="horizontal"
@@ -71,6 +70,9 @@ export function AppLayout() {
               icon: <PlusCircleOutlined />,
               label: <Link to="/create">Add Produce Batch</Link>,
             },
+            { key: "groups", label: <Link to="/groups">Groups</Link> },
+            { key: "account", label: <Link to="/account">My account</Link> },
+            ...(session.user.role === "admin" ? [{key: "admin", label: <Link to="/admin">Administration</Link>}] : []),
             {
               key: "about",
               icon: <InfoCircleOutlined />,
@@ -109,7 +111,7 @@ export function AppLayout() {
         }}
       >
         <Typography.Text type="secondary" style={{ fontSize: 13 }}>
-          🌾 <strong>Haat_Bazar (হাট বাজার)</strong> — Agricultural Disintermediation Marketplace • Mid Project Assessment
+          🌾 <strong>Haat_Bazar (হাট বাজার)</strong> — Agricultural Disintermediation Marketplace
         </Typography.Text>
         <br />
         <Typography.Text type="secondary" style={{ fontSize: 12 }}>

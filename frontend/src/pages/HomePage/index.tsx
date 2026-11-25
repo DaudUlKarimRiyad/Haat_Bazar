@@ -56,9 +56,15 @@ export function HomePage() {
   // Reload data from API service
   const reload = async () => {
     try {
-      const page = await apiService.getListings(0, 100)
-      setListings(page.items)
-      setTotal(page.total)
+      const first = await apiService.getListings(0, 100)
+      const items = [...first.items]
+      for (let offset = 100; offset < first.total; offset += 100) {
+        const page = await apiService.getListings(offset, 100)
+        items.push(...page.items)
+      }
+      setError("")
+      setListings(items)
+      setTotal(first.total)
     } catch (err) {
       setError(messageOf(err))
     }
@@ -107,6 +113,7 @@ export function HomePage() {
     )
     setSubmitting(false)
     if (ok) setIsModalOpen(false)
+    return ok
   }
 
   const handleToggleActive = (listing: ProductListing) => {
@@ -123,11 +130,6 @@ export function HomePage() {
     return run(() => apiService.deleteListing(id), "Produce batch deleted")
   }
 
-  const handleResetDemo = async () => {
-    await run(() => apiService.resetDemoData(), "Demo dataset reset to initial state")
-  }
-
-  // Filter listings client-side
   const filteredListings = useMemo(() => {
     return listings.filter((item) => {
       if (filters.onlyActive && !item.is_active) return false
@@ -216,6 +218,7 @@ export function HomePage() {
       render: (active: boolean, record: ProductListing) => (
         <Switch
           size="small"
+          disabled={!record.can_update}
           checked={active}
           onChange={() => handleToggleActive(record)}
         />
@@ -232,14 +235,14 @@ export function HomePage() {
             icon={<EyeOutlined />}
             onClick={() => navigate(`/listings/${record.id}`)}
           />
-          <Popconfirm
+          {record.can_delete && <Popconfirm
             title="Delete batch listing?"
             okText="Delete"
             okButtonProps={{ danger: true }}
             onConfirm={() => handleDelete(record.id)}
           >
             <Button size="small" danger icon={<DeleteOutlined />} />
-          </Popconfirm>
+          </Popconfirm>}
         </Flex>
       ),
     },
@@ -304,7 +307,6 @@ export function HomePage() {
       <ListingStats
         listings={listings}
         total={total}
-        onResetDemo={handleResetDemo}
       />
 
       {/* Filters and Search Bar */}

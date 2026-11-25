@@ -36,3 +36,6 @@ Thumbs.db
 .vscode/*
 !.vscode/extensions.json
 .idea/
+
+# Private instructor credential report
+/submission-private/
