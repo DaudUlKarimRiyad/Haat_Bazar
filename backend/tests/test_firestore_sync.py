@@ -27,7 +27,7 @@ class _FakeCollection:
     def document(self, doc_id):
         return _FakeDocRef(self._store, doc_id)
 
-    def stream(self):
+    def stream(self, **kwargs):
         return [_FakeDocSnap(k, v) for k, v in self._store.items()]
 
 
@@ -41,7 +41,7 @@ class _FakeBatch:
     def delete(self, ref):
         self._ops.append(("delete", ref, None))
 
-    def commit(self):
+    def commit(self, **kwargs):
         for action, ref, data in self._ops:
             if action == "set":
                 ref._store[ref.id] = dict(data)

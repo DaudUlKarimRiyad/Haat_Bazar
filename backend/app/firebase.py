@@ -148,6 +148,14 @@ def serialize_instance(instance: Any) -> dict[str, Any]:
     return instance.model_dump()
 
 
+def _retry_kwargs() -> dict[str, Any]:
+    try:
+        from google.api_core.retry import Retry
+        return {"retry": Retry(deadline=8.0), "timeout": 8.0}
+    except Exception:
+        return {}
+
+
 def sync_operations(ops: Iterable[tuple[str, str, str, dict[str, Any] | None]]) -> int:
     ops_list = list(ops)
     if not ops_list or not FIRESTORE_SYNC_ENABLED:
@@ -166,7 +174,10 @@ def sync_operations(ops: Iterable[tuple[str, str, str, dict[str, Any] | None]]) 
                 else:
                     batch.set(ref, data or {})
                 written += 1
-            batch.commit(timeout=10.0)
+            try:
+                batch.commit(timeout=8.0)
+            except TypeError:
+                batch.commit()
         return written
     except Exception as exc:
         logger.warning("Firestore live sync skipped due to error: %s", exc)
@@ -209,8 +220,12 @@ def hydrate_sql_from_firestore(session: Session) -> dict[str, int]:
     restored: dict[str, int] = {}
     try:
         session.info["skip_firestore_sync"] = True
+        rk = _retry_kwargs()
         for model, collection in SYNC_MODELS:
-            docs = list(client.collection(collection).stream(timeout=10.0))
+            try:
+                docs = list(client.collection(collection).stream(**rk))
+            except TypeError:
+                docs = list(client.collection(collection).stream())
             count = 0
             for doc in docs:
                 data = doc.to_dict() or {}
