@@ -1,8 +1,9 @@
 from sqlalchemy import event, update
+from sqlalchemy.orm import Session as SASession
 from sqlalchemy.pool import NullPool
 from sqlmodel import Session, SQLModel, create_engine
 
-from app.config import DATABASE_URL
+from app.config import DATABASE_URL, FIRESTORE_SYNC_ENABLED
 from app import models
 from app.listings.models import ProductListing
 
@@ -15,11 +16,55 @@ if DATABASE_URL.startswith("sqlite:"):
 else:
     engine = create_engine(DATABASE_URL, poolclass=NullPool)
 
+@event.listens_for(SASession, "after_flush")
+def _collect_firestore_ops(session, _flush_context):
+    if not FIRESTORE_SYNC_ENABLED or session.info.get("skip_firestore_sync"):
+        return
+    from app.firebase import collection_for, doc_id_for, serialize_instance
+
+    pending = session.info.setdefault("_pending_firestore_ops", {})
+    for obj in list(session.new) + list(session.dirty):
+        if obj in session.deleted:
+            continue
+        col = collection_for(obj)
+        if col and (obj in session.new or session.is_modified(obj, include_collections=False)):
+            did = doc_id_for(obj)
+            pending[(col, did)] = ("set", col, did, serialize_instance(obj))
+    for obj in session.deleted:
+        col = collection_for(obj)
+        if col:
+            did = doc_id_for(obj)
+            pending[(col, did)] = ("delete", col, did, None)
+
+
+@event.listens_for(SASession, "after_commit")
+def _flush_firestore_ops(session):
+    pending = session.info.pop("_pending_firestore_ops", None)
+    extra = session.info.pop("firestore_ops", None)
+    if not FIRESTORE_SYNC_ENABLED or session.info.get("skip_firestore_sync"):
+        return
+    ops = list(pending.values()) if pending else []
+    if extra:
+        ops.extend(extra)
+    if ops:
+        from app.firebase import sync_operations
+        sync_operations(ops)
+
+
+@event.listens_for(SASession, "after_rollback")
+def _discard_firestore_ops(session):
+    session.info.pop("_pending_firestore_ops", None)
+    session.info.pop("firestore_ops", None)
+
+
 def create_db_and_tables():
     SQLModel.metadata.create_all(engine)
     with Session(engine) as session:
         session.execute(update(models.Account).where(models.Account.role == "user").values(role="grower"))
         session.commit()
+        if FIRESTORE_SYNC_ENABLED:
+            from app.firebase import hydrate_sql_from_firestore
+            hydrate_sql_from_firestore(session)
 
 def get_session():
     with Session(engine) as session:

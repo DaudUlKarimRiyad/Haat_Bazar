@@ -116,7 +116,9 @@ def require_consumer(user: User):
 Consumer = Annotated[Account, Depends(require_consumer)]
 
 def revoke_all(db, user_id):
-    db.execute(update(LoginSession).where(LoginSession.user_id == user_id).values(revoked=True))
+    rows = db.exec(select(LoginSession).where(LoginSession.user_id == user_id, LoginSession.revoked == False)).all()
+    for row in rows:
+        row.revoked = True
 
 def group_access(db, user, group_id, permission=READ, lock=False):
     query = select(GrowerGroup).where(GrowerGroup.id == group_id)

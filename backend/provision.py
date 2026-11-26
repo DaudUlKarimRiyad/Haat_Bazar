@@ -5,6 +5,7 @@ import os
 from sqlmodel import Session, select
 from app.access import hash_password
 from app.database import create_db_and_tables, engine, sample_listings
+from app.firebase import hydrate_sql_from_firestore, migrate_sql_to_firestore
 from app.listings.models import ProductListing
 from app.models import Account, GrowerGroup, Member, Order, OrderItem, SharedBatch
 
@@ -109,11 +110,19 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--demo", action="store_true")
     parser.add_argument("--import-firestore", action="store_true")
+    parser.add_argument("--export-firestore", action="store_true")
+    parser.add_argument("--hydrate-firestore", action="store_true")
     args = parser.parse_args()
     create_db_and_tables()
     if args.import_firestore:
         with Session(engine) as session:
             import_firestore(session)
+    if args.hydrate_firestore:
+        with Session(engine) as session:
+            print("Hydrated from Firestore:", hydrate_sql_from_firestore(session))
     if args.demo:
         with Session(engine) as session:
             seed(session)
+    if args.export_firestore:
+        with Session(engine) as session:
+            print("Migrated to Firestore:", migrate_sql_to_firestore(session))

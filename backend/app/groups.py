@@ -79,7 +79,8 @@ def remove_member(gid: str, uid: str, db: DB, user: Grower):
     member = db.get(Member, (gid, uid))
     if not member:
         raise HTTPException(404, "Member not found.")
-    db.execute(update(SharedBatch).where(SharedBatch.group_id == gid, SharedBatch.assignee == uid).values(assignee=None))
+    for share in db.exec(select(SharedBatch).where(SharedBatch.group_id == gid, SharedBatch.assignee == uid)).all():
+        share.assignee = None
     db.delete(member)
     db.commit()
 
@@ -108,8 +109,16 @@ def assign(gid: str, bid: str, data: Assignment, db: DB, user: Grower):
     db.commit()
 
 def delete_group(db, group):
-    batch_ids = select(SharedBatch.listing_id).where(SharedBatch.group_id == group.id)
-    db.execute(delete(ProductListing).where(ProductListing.id.in_(batch_ids)))
+    shares = db.exec(select(SharedBatch).where(SharedBatch.group_id == group.id)).all()
+    batch_ids = [s.listing_id for s in shares]
+    for share in shares:
+        db.delete(share)
+    for member in db.exec(select(Member).where(Member.group_id == group.id)).all():
+        db.delete(member)
+    for bid in batch_ids:
+        listing = db.get(ProductListing, bid)
+        if listing:
+            db.delete(listing)
     db.delete(group)
 
 @router.delete("/{gid}", status_code=204)

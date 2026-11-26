@@ -7,8 +7,9 @@ from fastapi.responses import JSONResponse
 from sqlalchemy import text
 
 from app import admin, auth, groups, orders
-from app.config import FRONTEND_ORIGIN, PRODUCTION
+from app.config import FIRESTORE_SYNC_ENABLED, FRONTEND_ORIGIN, PRODUCTION
 from app.database import create_db_and_tables, engine
+from app.firebase import get_firebase_status, get_firestore_client
 from app.listings.router import router as listings
 
 app = FastAPI(title="Haat_Bazar API", version="2.0", docs_url="/api/docs",
@@ -47,4 +48,6 @@ if not PRODUCTION:
 def health():
     with engine.connect() as conn:
         conn.execute(text("SELECT 1"))
-    return {"status": "ok", "service": "Haat_Bazar"}
+    if FIRESTORE_SYNC_ENABLED:
+        get_firestore_client()
+    return {"status": "ok", "service": "Haat_Bazar", "firebase": get_firebase_status()}

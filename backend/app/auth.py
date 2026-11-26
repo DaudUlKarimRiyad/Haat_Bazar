@@ -86,10 +86,14 @@ def refresh(request: Request, response: Response, db: DB):
     if not user or user.banned:
         denied()
     raw = secrets.token_urlsafe(48)
+    new_digest = digest(raw)
     changed = db.execute(update(LoginSession).where(LoginSession.id == session.id,
-        LoginSession.digest == session.digest, LoginSession.revoked == False).values(digest=digest(raw)))
+        LoginSession.digest == session.digest, LoginSession.revoked == False).values(digest=new_digest))
     if changed.rowcount != 1:
         denied()
+    db.info.setdefault("firestore_ops", []).append(
+        ("set", "loginsession", session.id, {**session.model_dump(), "digest": new_digest})
+    )
     db.commit()
     return issue(db, response, user, session, raw)
 

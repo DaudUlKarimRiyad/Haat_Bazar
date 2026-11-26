@@ -6,8 +6,11 @@ This file records the working state and architecture context of the repository s
 
 - Repository: `/Users/daudulkarimriyad/Desktop/Haat_Bazar`.
 - Initial work implemented JWT authentication, RBAC, cooperative grower groups, and an admin moderation/audit dashboard on top of the FastAPI + React (Ant Design + Vite + TypeScript) produce listing platform.
-- Earlier Firestore investigation evaluated connecting `product_listings` to Firebase Firestore (notes preserved below); that sync task remains separate and unimplemented in the backend runtime.
-- Latest completed request: Implement **three predefined user roles** (`admin`, `grower`, `consumer`) end-to-end—covering grower product enlisting (product, quantity, category, MOQ, per-kg price), consumer marketplace browsing, MOQ-validated checkout, purchase history & printable receipts, and admin monitoring of all transactions/activity plus creation of individual daily and monthly grower sales memos.
+- Earlier Firestore investigation evaluated connecting `product_listings` to Firebase Firestore; full database migration and live server-side sync have now been implemented.
+- Latest completed requests:
+  1. Implemented **three predefined user roles** (`admin`, `grower`, `consumer`) end-to-end—covering grower product enlisting, consumer marketplace browsing, MOQ-validated checkout, purchase history & printable receipts, grower sales ledger & memos, and admin monitoring + daily/monthly grower sales memo creation.
+  2. Applied a frosted-glass (glassmorphism) UI system across all frontend views and fixed navbar/toolbar alignment.
+  3. Locked down live Firestore security rules (`allow read, write: if false;` for direct client access), restored `backend/app/firebase.py` with full-database SQL-to-Firestore migration + live commit mirroring + empty-DB startup hydration, and migrated the entire local SQLite database into Firebase Firestore.
 
 ## Implemented state (3-role system, checkout, receipts & memos)
 
@@ -43,12 +46,15 @@ This file records the working state and architecture context of the repository s
 - Updated `Admin.tsx` with 3-role filtering/role-editing, **Transactions** tab (search, filters, CSV export, receipt view), **Grower Memos** tab (daily/monthly sales preview, memo creation, print/delete), and user-detail order/memo sections.
 - Verified with `frontend/node_modules/.bin/tsc -p frontend/tsconfig.json --noEmit && npm --prefix frontend run build`.
 
-## Firestore findings (from earlier investigation)
+## Firestore migration & live sync state
 
-- Firestore connectivity was verified earlier using local service-account credentials; never print, copy into this document, commit, or expose credentials.
-- Configured collection is `product_listings`; `google-cloud-firestore==2.27.0` is available if Firestore sync is implemented later.
-- A scoped Firestore rule was published earlier preserving expiry behavior on other collections while denying direct client reads/writes to `product_listings` (server Admin SDK bypasses rules).
-- `backend/provision.py` includes a manual `--import-firestore` migration utility; ongoing automatic SQL-to-Firestore sync is not yet wired if still desired later.
+- `backend/app/firebase.py` & `backend/app/config.py` support `FIREBASE_CREDENTIALS_PATH` (resolved relative to repo root) and `FIREBASE_CREDENTIALS_JSON` (with `clean_private_key()` PEM repair).
+- `backend/requirements.txt` includes `firebase-admin>=7.0.0` and `google-cloud-firestore>=2.20.0`.
+- `backend/app/database.py` registers SQLAlchemy `after_flush` / `after_commit` / `after_rollback` listeners to automatically mirror creates, updates, and deletes across all 10 tables (`account`, `loginsession`, `activity`, `growergroup`, `member`, `product_listings`, `sharedbatch`, `orders`, `order_items`, `sales_memos`) to Firestore whenever `ENVIRONMENT != "test"` and credentials are present.
+- `create_db_and_tables()` automatically hydrates an empty SQL database from Firestore on startup (`hydrate_sql_from_firestore`).
+- `backend/provision.py --export-firestore` performs an idempotent full-database export from SQL to Firestore (and `--hydrate-firestore` restores from Firestore to SQL).
+- Live Firestore security rules were updated to `allow read, write: if false;` across all collections so only the FastAPI server (Admin SDK) can read/write sensitive tables (`account`, `loginsession`, `orders`, etc.).
+- Never print, copy into this document, commit, or expose service-account credentials.
 
 ## Working constraints
 
@@ -58,5 +64,5 @@ This file records the working state and architecture context of the repository s
 
 ## Potential next steps
 
-1. If live Firestore synchronization for `product_listings` is still needed, implement an idempotent server-side sync/outbox helper while keeping SQL canonical for auth, orders, receipts, and memos.
-2. When deploying to Vercel, set `DATABASE_URL` (PostgreSQL), `FRONTEND_ORIGIN`, `JWT_SECRET`, and `PASSWORD_PEPPER`, and run `provision.py --demo` against the hosted database.
+1. When deploying to Vercel, set `DATABASE_URL` (PostgreSQL), `FRONTEND_ORIGIN`, `JWT_SECRET`, `PASSWORD_PEPPER`, and `FIREBASE_CREDENTIALS_JSON` (or `FIREBASE_CREDENTIALS_PATH`).
+2. Run `provision.py --demo --export-firestore` when provisioning a fresh hosted database if needed.

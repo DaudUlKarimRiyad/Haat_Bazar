@@ -6,3 +6,5 @@ python-dotenv>=1.0.0
 bcrypt>=4,<6
 PyJWT>=2.8,<3
 psycopg[binary]>=3.1,<4
+firebase-admin>=7.0.0
+google-cloud-firestore>=2.20.0

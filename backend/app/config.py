@@ -31,3 +31,17 @@ def secret(name):
 
 JWT_SECRET = secret("JWT_SECRET")
 PASSWORD_PEPPER = secret("PASSWORD_PEPPER")
+
+_raw_cred_path = os.getenv("FIREBASE_CREDENTIALS_PATH") or os.getenv("GOOGLE_APPLICATION_CREDENTIALS") or ""
+if _raw_cred_path and not Path(_raw_cred_path).is_absolute():
+    if (ROOT_DIR / _raw_cred_path).exists():
+        _raw_cred_path = str(ROOT_DIR / _raw_cred_path)
+    elif (BACKEND_DIR / _raw_cred_path).exists():
+        _raw_cred_path = str(BACKEND_DIR / _raw_cred_path)
+
+FIREBASE_CREDENTIALS_PATH = _raw_cred_path
+FIREBASE_JSON_CONTENT = os.getenv("FIREBASE_CREDENTIALS_JSON", "")
+FIRESTORE_COLLECTION = os.getenv("FIRESTORE_COLLECTION", "product_listings")
+FIRESTORE_SYNC_ENABLED = os.getenv("ENVIRONMENT", "development") != "test" and bool(
+    FIREBASE_CREDENTIALS_PATH or FIREBASE_JSON_CONTENT
+)
