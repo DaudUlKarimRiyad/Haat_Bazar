@@ -9,6 +9,7 @@ load_dotenv(ROOT_DIR / ".env")
 load_dotenv(BACKEND_DIR / ".env")
 
 PRODUCTION = bool(os.getenv("VERCEL")) or os.getenv("ENVIRONMENT") == "production"
+CONFIG_ERRORS: list[str] = []
 
 _raw_cred_path = os.getenv("FIREBASE_CREDENTIALS_PATH") or os.getenv("GOOGLE_APPLICATION_CREDENTIALS") or ""
 if _raw_cred_path:
@@ -39,18 +40,19 @@ if DATABASE_URL.startswith("sqlite:///") and not DATABASE_URL.startswith("sqlite
 if PRODUCTION and DATABASE_URL.startswith("sqlite:///") and not DATABASE_URL.startswith("sqlite:////tmp/") and DATABASE_URL != "sqlite:///:memory:":
     DATABASE_URL = "sqlite:////tmp/haat_bazar.db"
 if PRODUCTION and not DATABASE_URL.startswith("postgresql+psycopg://") and not FIRESTORE_SYNC_ENABLED:
-    raise RuntimeError(
+    CONFIG_ERRORS.append(
         "Set DATABASE_URL to a hosted PostgreSQL connection or configure FIREBASE_CREDENTIALS_JSON for Firestore."
     )
 
 _vercel_host = os.getenv("VERCEL_PROJECT_PRODUCTION_URL") or os.getenv("VERCEL_URL") or ""
+_raw_origin = (os.getenv("FRONTEND_ORIGIN") or "").strip().rstrip("/")
+if _raw_origin and not _raw_origin.startswith(("http://", "https://")):
+    _raw_origin = "https://" + _raw_origin
 FRONTEND_ORIGIN = (
-    os.getenv("FRONTEND_ORIGIN")
+    _raw_origin
     or (f"https://{_vercel_host}" if PRODUCTION and _vercel_host else "")
     or ("" if PRODUCTION else "http://localhost:5173")
 ).rstrip("/")
-if PRODUCTION and not FRONTEND_ORIGIN.startswith("https://"):
-    raise RuntimeError("Set FRONTEND_ORIGIN to the HTTPS frontend origin.")
 ALLOWED_ORIGINS = [
     origin
     for origin in dict.fromkeys(
@@ -65,11 +67,19 @@ ALLOWED_ORIGINS = [
     if origin
 ]
 
-def secret(name):
-    value = os.environ.get(name, "")
+
+def secret(name: str) -> str:
+    value = os.environ.get(name, "").strip()
     if len(value) < 32:
-        raise RuntimeError(f"Set {name} to an independent random secret of at least 32 characters.")
+        CONFIG_ERRORS.append(f"Set {name} to an independent random secret of at least 32 characters.")
+        return ""
     return value
+
 
 JWT_SECRET = secret("JWT_SECRET")
 PASSWORD_PEPPER = secret("PASSWORD_PEPPER")
+
+
+def ensure_configured():
+    if CONFIG_ERRORS:
+        raise RuntimeError("; ".join(CONFIG_ERRORS))

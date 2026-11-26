@@ -10,7 +10,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import update
 from sqlmodel import Session, select
 
-from app.config import JWT_SECRET, PASSWORD_PEPPER, PRODUCTION
+from app.config import JWT_SECRET, PASSWORD_PEPPER, PRODUCTION, ensure_configured
 from app.database import get_session
 from app.models import Account, Activity, GrowerGroup, LoginSession, Member, now
 
@@ -33,6 +33,7 @@ def denied():
     raise HTTPException(401, "Sign in again.", headers={"WWW-Authenticate": "Bearer"})
 
 def password_bytes(password):
+    ensure_configured()
     return hmac.digest(PASSWORD_PEPPER.encode(), password.encode(), "sha256").hex().encode()
 
 def hash_password(password):
@@ -60,6 +61,7 @@ def digest(raw):
     return hashlib.sha256(raw.encode()).hexdigest()
 
 def issue(db, response, user, session, raw):
+    ensure_configured()
     token = jwt.encode({"sub": user.id, "role": user.role, "sid": session.id,
                         "iat": now(), "exp": now() + 900}, JWT_SECRET, algorithm="HS256")
     response.set_cookie(COOKIE, raw, max_age=max(0, session.expires-now()), httponly=True,
@@ -76,6 +78,7 @@ def new_login(db, response, request, user):
     return issue(db, response, user, session, raw)
 
 def identity(request: Request, db: DB, auth: HTTPAuthorizationCredentials = Depends(bearer)):
+    ensure_configured()
     if not auth:
         denied()
     try:

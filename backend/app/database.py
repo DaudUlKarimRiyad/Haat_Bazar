@@ -1,11 +1,16 @@
+import threading
+
 from sqlalchemy import event, update
 from sqlalchemy.orm import Session as SASession
 from sqlalchemy.pool import NullPool
 from sqlmodel import Session, SQLModel, create_engine
 
-from app.config import DATABASE_URL, FIRESTORE_SYNC_ENABLED
+from app.config import DATABASE_URL, FIRESTORE_SYNC_ENABLED, ensure_configured
 from app import models
 from app.listings.models import ProductListing
+
+_init_lock = threading.Lock()
+_initialized = False
 
 if DATABASE_URL.startswith("sqlite:"):
     engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
@@ -58,6 +63,7 @@ def _discard_firestore_ops(session):
 
 
 def create_db_and_tables():
+    global _initialized
     SQLModel.metadata.create_all(engine)
     with Session(engine) as session:
         session.execute(update(models.Account).where(models.Account.role == "user").values(role="grower"))
@@ -65,8 +71,21 @@ def create_db_and_tables():
         if FIRESTORE_SYNC_ENABLED:
             from app.firebase import hydrate_sql_from_firestore
             hydrate_sql_from_firestore(session)
+    _initialized = True
+
+
+def ensure_initialized():
+    global _initialized
+    ensure_configured()
+    if _initialized:
+        return
+    with _init_lock:
+        if not _initialized:
+            create_db_and_tables()
+
 
 def get_session():
+    ensure_initialized()
     with Session(engine) as session:
         yield session
 

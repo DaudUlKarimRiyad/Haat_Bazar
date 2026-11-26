@@ -166,7 +166,7 @@ def sync_operations(ops: Iterable[tuple[str, str, str, dict[str, Any] | None]]) 
                 else:
                     batch.set(ref, data or {})
                 written += 1
-            batch.commit()
+            batch.commit(timeout=10.0)
         return written
     except Exception as exc:
         logger.warning("Firestore live sync skipped due to error: %s", exc)
@@ -210,7 +210,7 @@ def hydrate_sql_from_firestore(session: Session) -> dict[str, int]:
     try:
         session.info["skip_firestore_sync"] = True
         for model, collection in SYNC_MODELS:
-            docs = list(client.collection(collection).stream())
+            docs = list(client.collection(collection).stream(timeout=10.0))
             count = 0
             for doc in docs:
                 data = doc.to_dict() or {}
