@@ -18,7 +18,17 @@ export function SignIn() {
       const values = Object.fromEntries(new FormData(e.currentTarget))
       action.run(() => authenticate(signup ? "signup" : "login", values))
     }}>
-      {signup && <label>Name<input name="name" required minLength={2} maxLength={120} autoComplete="name"/></label>}
+      {signup && (
+        <>
+          <label>Name<input name="name" required minLength={2} maxLength={120} autoComplete="name"/></label>
+          <label>Account Type
+            <select name="role" defaultValue="consumer">
+              <option value="consumer">Consumer (Buy fresh produce & print receipts)</option>
+              <option value="grower">Grower / Farmer (Enlist & sell produce batches)</option>
+            </select>
+          </label>
+        </>
+      )}
       <label>Email<input name="email" type="email" required autoComplete="username"/></label>
       <label>Password<input name="password" type="password" required minLength={signup ? 12 : 1} maxLength={256}
         autoComplete={signup ? "new-password" : "current-password"}/></label>

@@ -4,6 +4,7 @@ import {
   EyeOutlined,
   InboxOutlined,
   PlusOutlined,
+  ShoppingCartOutlined,
 } from "@ant-design/icons"
 import {
   Alert,
@@ -28,7 +29,9 @@ import { ListingCard } from "../../components/ListingCard"
 import { ListingFilter, type FilterValues } from "../../components/ListingFilter"
 import { ListingForm } from "../../components/ListingForm"
 import { ListingStats } from "../../components/ListingStats"
+import { useCart } from "../../context/CartContext"
 import { PAGE_SIZE, apiService } from "../../services/api"
+import { useSession } from "../../services/http"
 import type { ListingInput, ProductListing, QualityGrade } from "../../types/listing"
 
 const messageOf = (err: unknown) =>
@@ -37,6 +40,9 @@ const messageOf = (err: unknown) =>
 export function HomePage() {
   const navigate = useNavigate()
   const { message } = AntApp.useApp()
+  const session = useSession()!
+  const isConsumer = session.user.role === "consumer"
+  const { items: cartItems, addItem } = useCart()
 
   const [listings, setListings] = useState<ProductListing[]>([])
   const [loading, setLoading] = useState(true)
@@ -215,14 +221,19 @@ export function HomePage() {
       title: "Status",
       dataIndex: "is_active",
       key: "is_active",
-      render: (active: boolean, record: ProductListing) => (
-        <Switch
-          size="small"
-          disabled={!record.can_update}
-          checked={active}
-          onChange={() => handleToggleActive(record)}
-        />
-      ),
+      render: (active: boolean, record: ProductListing) =>
+        isConsumer ? (
+          <Tag color={record.available_qty_kg >= record.b2c_moq_kg ? "green" : "red"}>
+            {record.available_qty_kg >= record.b2c_moq_kg ? `Min ${record.b2c_moq_kg} kg` : "Sold Out"}
+          </Tag>
+        ) : (
+          <Switch
+            size="small"
+            disabled={!record.can_update}
+            checked={active}
+            onChange={() => handleToggleActive(record)}
+          />
+        ),
     },
     {
       title: "Actions",
@@ -231,11 +242,23 @@ export function HomePage() {
         <Flex gap={8}>
           <Button
             size="small"
-            type="primary"
+            type={isConsumer ? "default" : "primary"}
             icon={<EyeOutlined />}
             onClick={() => navigate(`/listings/${record.id}`)}
           />
-          {record.can_delete && <Popconfirm
+          {isConsumer && (
+            <Button
+              size="small"
+              type="primary"
+              icon={<ShoppingCartOutlined />}
+              disabled={!record.is_active || record.available_qty_kg < record.b2c_moq_kg}
+              onClick={() => {
+                addItem(record)
+                message.success(`Added ${record.b2c_moq_kg} kg of ${record.commodity_name} to cart`)
+              }}
+            />
+          )}
+          {!isConsumer && record.can_delete && <Popconfirm
             title="Delete batch listing?"
             okText="Delete"
             okButtonProps={{ danger: true }}
@@ -268,27 +291,45 @@ export function HomePage() {
                 maxWidth: 620,
               }}
             >
-              Direct Farm-to-Consumer & Bulk Wholesale Marketplace.
-              Disintermediating rural middlemen (Dalals/Farias) to empower farmers
-              with transparent pricing, digital grading, and automated escrow.
+              {isConsumer
+                ? "Local Fresh Produce Marketplace. Browse grower batches, match minimum purchaseable quantities, checkout for hub pickup or delivery, and print your receipt."
+                : "Direct Farm-to-Consumer & Bulk Wholesale Marketplace. Disintermediating rural middlemen (Dalals/Farias) to empower farmers with transparent pricing, digital grading, and automated escrow."}
             </Typography.Paragraph>
           </Col>
           <Col xs={24} md={8} style={{ textAlign: "right" }}>
-            <Button
-              type="primary"
-              size="large"
-              icon={<PlusOutlined />}
-              style={{
-                background: "#ffffff",
-                color: "#135200",
-                fontWeight: 600,
-                border: "none",
-                boxShadow: "0 4px 10px rgba(0,0,0,0.15)",
-              }}
-              onClick={() => setIsModalOpen(true)}
-            >
-              Add Produce Batch
-            </Button>
+            {isConsumer ? (
+              <Button
+                type="primary"
+                size="large"
+                icon={<ShoppingCartOutlined />}
+                style={{
+                  background: "#ffffff",
+                  color: "#135200",
+                  fontWeight: 600,
+                  border: "none",
+                  boxShadow: "0 4px 10px rgba(0,0,0,0.15)",
+                }}
+                onClick={() => navigate("/cart")}
+              >
+                Cart & Checkout ({cartItems.length})
+              </Button>
+            ) : (
+              <Button
+                type="primary"
+                size="large"
+                icon={<PlusOutlined />}
+                style={{
+                  background: "#ffffff",
+                  color: "#135200",
+                  fontWeight: 600,
+                  border: "none",
+                  boxShadow: "0 4px 10px rgba(0,0,0,0.15)",
+                }}
+                onClick={() => setIsModalOpen(true)}
+              >
+                Add Produce Batch
+              </Button>
+            )}
           </Col>
         </Row>
       </div>
@@ -325,9 +366,11 @@ export function HomePage() {
           image={Empty.PRESENTED_IMAGE_SIMPLE}
           description="No produce batches match your filter criteria"
         >
-          <Button type="primary" onClick={() => setIsModalOpen(true)}>
-            List First Produce Batch
-          </Button>
+          {!isConsumer && (
+            <Button type="primary" onClick={() => setIsModalOpen(true)}>
+              List First Produce Batch
+            </Button>
+          )}
         </Empty>
       ) : filters.viewMode === "grid" ? (
         <Row gutter={[16, 16]}>
@@ -335,9 +378,14 @@ export function HomePage() {
             <Col xs={24} sm={12} lg={8} key={listing.id}>
               <ListingCard
                 listing={listing}
+                isConsumer={isConsumer}
                 onView={(id) => navigate(`/listings/${id}`)}
                 onToggleActive={handleToggleActive}
                 onDelete={handleDelete}
+                onAddToCart={(item) => {
+                  addItem(item)
+                  message.success(`Added ${item.b2c_moq_kg} kg of ${item.commodity_name} to cart`)
+                }}
               />
             </Col>
           ))}

@@ -1,6 +1,6 @@
 from fastapi import HTTPException
 
-from app.access import CREATE, OWNER, UPDATE, group_access
+from app.access import ADMIN, CONSUMER, CREATE, OWNER, UPDATE, group_access
 from app.listings.models import ProductListing, get_utc_now_iso
 from app.listings.repository import ListingRepository
 from app.listings.schemas import ListingRead
@@ -20,6 +20,12 @@ class ListingService:
 
     def describe(self, item):
         read = ListingRead.model_validate(item)
+        if self.user.role == CONSUMER:
+            read.can_update = False
+            read.can_delete = False
+        elif self.user.role == ADMIN:
+            read.can_update = True
+            read.can_delete = True
         share = self.db.get(SharedBatch, item.id)
         if share:
             group = self.db.get(GrowerGroup, share.group_id)
@@ -27,8 +33,9 @@ class ListingService:
             member = self.db.get(Member, (group.id, self.user.id))
             read.group_id = group.id
             read.assignee = share.assignee
-            read.can_update = owner or bool(member and member.update_batches)
-            read.can_delete = owner
+            if self.user.role not in (CONSUMER, ADMIN):
+                read.can_update = owner or bool(member and member.update_batches)
+                read.can_delete = owner
         return read
 
     @staticmethod
@@ -54,7 +61,7 @@ class ListingService:
         item = self.get(listing_id, lock=True)
         share = self.db.get(SharedBatch, item.id)
         patch = data.model_dump(exclude_unset=True)
-        if share:
+        if share and self.user.role != ADMIN:
             permission = OWNER if patch.get("commodity_name", item.commodity_name) != item.commodity_name else UPDATE
             group_access(self.db, self.user, share.group_id, permission, lock=True)
         for field, value in patch.items():

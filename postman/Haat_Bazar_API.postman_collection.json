@@ -37,6 +37,16 @@
       "response": []
     },
     {
+      "name": "Sign up (consumer or grower)",
+      "request": {
+        "auth": { "type": "noauth" },
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\"name\":\"Demo Consumer\",\"email\":\"{{email}}\",\"password\":\"{{password}}\",\"role\":\"consumer\"}" },
+        "url": "{{base_url}}/api/v1/auth/signup"
+      }
+    },
+    {
       "name": "Sign in",
       "request": {
         "auth": { "type": "noauth" },
@@ -155,6 +165,51 @@
         "description": "Permanently remove a batch listing (returns 204 No Content)."
       },
       "response": []
+    },
+    {
+      "name": "6. Consumer Checkout (POST Order)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"items\": [{ \"listing_id\": \"{{listing_id}}\", \"quantity_kg\": 5 }],\n  \"order_tier\": \"B2C\",\n  \"fulfillment_type\": \"pickup\",\n  \"distance_km\": 0,\n  \"notes\": \"Morning hub pickup\"\n}"
+        },
+        "url": "{{base_url}}/api/v1/orders"
+      }
+    },
+    {
+      "name": "7. Consumer Order History (GET)",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/orders"
+      }
+    },
+    {
+      "name": "8. Grower Sales & Memos (GET)",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/memos"
+      }
+    },
+    {
+      "name": "9. Admin Transactions (GET)",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/admin/transactions?offset=0&limit=20"
+      }
+    },
+    {
+      "name": "10. Admin Create Grower Memo (POST)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"farmer_id\": \"demo-grower1\",\n  \"period_type\": \"daily\",\n  \"period_key\": \"2026-11-26\",\n  \"notes\": \"Daily settlement\"\n}"
+        },
+        "url": "{{base_url}}/api/v1/admin/memos"
+      }
     }
   ]
 }

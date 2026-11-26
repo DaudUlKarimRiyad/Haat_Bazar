@@ -1,4 +1,4 @@
-from sqlalchemy import event
+from sqlalchemy import event, update
 from sqlalchemy.pool import NullPool
 from sqlmodel import Session, SQLModel, create_engine
 
@@ -17,6 +17,9 @@ else:
 
 def create_db_and_tables():
     SQLModel.metadata.create_all(engine)
+    with Session(engine) as session:
+        session.execute(update(models.Account).where(models.Account.role == "user").values(role="grower"))
+        session.commit()
 
 def get_session():
     with Session(engine) as session:

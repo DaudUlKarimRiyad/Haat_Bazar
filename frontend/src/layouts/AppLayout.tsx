@@ -3,10 +3,13 @@ import {
   AppstoreOutlined,
   InfoCircleOutlined,
   PlusCircleOutlined,
-  ShopOutlined,
+  RiseOutlined,
+  ShoppingCartOutlined,
+  SolutionOutlined,
 } from "@ant-design/icons"
-import { Flex, Layout, Menu, Switch, Tag, Typography } from "antd"
+import { Badge, Flex, Layout, Menu, Switch, Tag, Typography } from "antd"
 import { Link, Outlet, useLocation } from "react-router"
+import { useCart } from "../context/CartContext"
 import { useTheme } from "../context/ThemeContext"
 
 import { useSession } from "../services/http"
@@ -15,12 +18,21 @@ export function AppLayout() {
   const session = useSession()!
   const { pathname } = useLocation()
   const { darkMode, toggleDark } = useTheme()
+  const { items: cartItems } = useCart()
+  const role = session.user.role
+  const isGrowerOrAdmin = role === "grower" || role === "admin"
 
   const getSelectedKey = () => {
     if (pathname === "/about") return "about"
     if (pathname === "/create") return "create"
+    if (pathname === "/cart") return "cart"
+    if (pathname.startsWith("/orders")) return "orders"
+    if (pathname.startsWith("/sales") || pathname.startsWith("/memos")) return "sales"
     return pathname.split("/")[1] || "listings"
   }
+
+  const roleColor = role === "admin" ? "gold" : role === "grower" ? "green" : "cyan"
+  const roleLabel = role === "admin" ? "Admin" : role === "grower" ? "Grower / Farmer" : "Consumer"
 
   return (
     <Layout style={{ minHeight: "100vh" }}>
@@ -63,16 +75,50 @@ export function AppLayout() {
             {
               key: "listings",
               icon: <AppstoreOutlined />,
-              label: <Link to="/">Batch Listings</Link>,
+              label: <Link to="/">{role === "consumer" ? "Marketplace" : "Batch Listings"}</Link>,
             },
-            {
-              key: "create",
-              icon: <PlusCircleOutlined />,
-              label: <Link to="/create">Add Produce Batch</Link>,
-            },
-            { key: "groups", label: <Link to="/groups">Groups</Link> },
+            ...(isGrowerOrAdmin
+              ? [
+                  {
+                    key: "create",
+                    icon: <PlusCircleOutlined />,
+                    label: <Link to="/create">Add Produce Batch</Link>,
+                  },
+                  { key: "groups", label: <Link to="/groups">Groups</Link> },
+                ]
+              : []),
+            ...(role === "grower"
+              ? [
+                  {
+                    key: "sales",
+                    icon: <RiseOutlined />,
+                    label: <Link to="/sales">Sales & Memos</Link>,
+                  },
+                ]
+              : []),
+            ...(role === "consumer"
+              ? [
+                  {
+                    key: "cart",
+                    icon: <ShoppingCartOutlined />,
+                    label: (
+                      <Link to="/cart">
+                        Cart{" "}
+                        {cartItems.length > 0 && (
+                          <Badge count={cartItems.length} size="small" offset={[4, -2]} />
+                        )}
+                      </Link>
+                    ),
+                  },
+                  {
+                    key: "orders",
+                    icon: <SolutionOutlined />,
+                    label: <Link to="/orders">Orders & Receipts</Link>,
+                  },
+                ]
+              : []),
             { key: "account", label: <Link to="/account">My account</Link> },
-            ...(session.user.role === "admin" ? [{key: "admin", label: <Link to="/admin">Administration</Link>}] : []),
+            ...(role === "admin" ? [{ key: "admin", label: <Link to="/admin">Administration</Link> }] : []),
             {
               key: "about",
               icon: <InfoCircleOutlined />,
@@ -81,7 +127,10 @@ export function AppLayout() {
           ]}
         />
 
-        <Flex align="center" gap={8}>
+        <Flex align="center" gap={10}>
+          <Tag color={roleColor} style={{ margin: 0 }}>
+            {roleLabel}
+          </Tag>
           <Switch
             checked={darkMode}
             onChange={toggleDark}

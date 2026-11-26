@@ -6,10 +6,17 @@ from sqlmodel import Session, select
 from app.access import hash_password
 from app.database import create_db_and_tables, engine, sample_listings
 from app.listings.models import ProductListing
-from app.models import Account, GrowerGroup, Member, SharedBatch
+from app.models import Account, GrowerGroup, Member, Order, OrderItem, SharedBatch
 
-DEMOS = [("admin1", "Admin One", "admin"), ("admin2", "Admin Two", "admin"),
-         ("grower1", "Rafiq", "user"), ("grower2", "Karim", "user"), ("grower3", "Mina", "user")]
+DEMOS = [
+    ("admin1", "Admin One", "admin"),
+    ("admin2", "Admin Two", "admin"),
+    ("grower1", "Rafiq", "grower"),
+    ("grower2", "Karim", "grower"),
+    ("grower3", "Mina", "grower"),
+    ("consumer1", "Anika", "consumer"),
+    ("consumer2", "Sajid", "consumer"),
+]
 
 def seed(db):
     users = []
@@ -19,6 +26,8 @@ def seed(db):
         if user:
             if user.email != email:
                 raise ValueError("Demo ID belongs to another account.")
+            if user.role != role:
+                user.role = role
         else:
             if db.exec(select(Account).where(Account.email == email)).first():
                 raise ValueError("Demo email already registered. Resolve the conflict before seeding.")
@@ -44,6 +53,41 @@ def seed(db):
             db.flush()
             if i == 0:
                 db.add(SharedBatch(listing_id=listing.id, group_id=group.id))
+    if not db.get(Order, "demo-order-1") and len(users) >= 6:
+        sample = sample_listings()[0]
+        qty = 10.0
+        subtotal = round(qty * sample.farmer_unit_price, 2)
+        service_fee = round(max(20.0, subtotal * 0.05), 2)
+        order = Order(
+            id="demo-order-1",
+            receipt_number="RCP-DEMO-0001",
+            consumer_id=users[5].id,
+            consumer_name=users[5].name,
+            consumer_email=users[5].email,
+            order_tier="B2C",
+            fulfillment_type="pickup",
+            notes="Morning hub pickup",
+            subtotal=subtotal,
+            service_fee=service_fee,
+            delivery_fee=0.0,
+            total_amount=round(subtotal + service_fee, 2),
+        )
+        db.add(order)
+        db.flush()
+        db.add(OrderItem(
+            id="demo-order-item-1",
+            order_id=order.id,
+            listing_id="demo-batch-1",
+            farmer_id=users[2].id,
+            farmer_name=sample.farmer_name,
+            commodity_name=sample.commodity_name,
+            category=sample.category,
+            hub_name=sample.hub_name,
+            quantity_kg=qty,
+            unit_price=sample.farmer_unit_price,
+            moq_kg=sample.b2c_moq_kg,
+            line_total=subtotal,
+        ))
     db.commit()
 
 def import_firestore(db):

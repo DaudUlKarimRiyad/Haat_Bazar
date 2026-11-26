@@ -7,6 +7,7 @@ import {
   EditOutlined,
   EnvironmentOutlined,
   SafetyCertificateOutlined,
+  ShoppingCartOutlined,
   UserOutlined,
 } from "@ant-design/icons"
 import {
@@ -35,7 +36,8 @@ import { useEffect, useState } from "react"
 import { useNavigate, useParams } from "react-router"
 import { ListingForm } from "../../components/ListingForm"
 import { useRemote } from "../../components/Remote"
-import { request } from "../../services/http"
+import { useCart } from "../../context/CartContext"
+import { request, useSession } from "../../services/http"
 import type { Group } from "../Groups"
 import { apiService } from "../../services/api"
 import type {
@@ -54,16 +56,21 @@ export function ListingDetailsPage() {
   const { listingId } = useParams<{ listingId: string }>()
   const navigate = useNavigate()
   const { message } = AntApp.useApp()
+  const session = useSession()!
+  const isConsumer = session.user.role === "consumer"
+  const { addItem } = useCart()
 
-  const groups = useRemote<Group[]>("/groups")
+  const groups = useRemote<Group[]>(isConsumer ? "" : "/groups")
   const [listing, setListing] = useState<ProductListing | null>(null)
   const [loading, setLoading] = useState(true)
   const [isEditing, setIsEditing] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [checkingOut, setCheckingOut] = useState(false)
   const [error, setError] = useState("")
 
   // Live Pricing Engine Calculator State (Section 3 of README)
   const [orderTier, setOrderTier] = useState<"B2C" | "B2B">("B2C")
+  const [fulfillmentType, setFulfillmentType] = useState<"pickup" | "delivery">("pickup")
   const [orderQty, setOrderQty] = useState<number>(5)
   const [estDistanceKm, setEstDistanceKm] = useState<number>(15)
 
@@ -165,7 +172,7 @@ export function ListingDetailsPage() {
   const B_base = orderTier === "B2C" ? 40 : 250
   const C_dist = 2.5 // ৳2.5/km
   const C_weight = orderTier === "B2C" ? 1.5 : 0.8 // ৳/kg
-  const F_delivery = Math.round(B_base + estDistanceKm * C_dist + Q * C_weight)
+  const F_delivery = fulfillmentType === "pickup" ? 0 : Math.round(B_base + estDistanceKm * C_dist + Q * C_weight)
 
   const P_buyer = P_farmer + F_service + F_delivery
 
@@ -173,7 +180,27 @@ export function ListingDetailsPage() {
   const moqRequired = orderTier === "B2C" ? listing.b2c_moq_kg : listing.b2b_moq_kg
   const movRequired = orderTier === "B2C" ? 500 : 5000
   const passesMoq = Q >= moqRequired
+  const passesStock = Q <= listing.available_qty_kg && listing.available_qty_kg > 0
   const passesMov = P_farmer >= movRequired
+
+  const handleQuickCheckout = async () => {
+    setCheckingOut(true)
+    try {
+      const order = await apiService.checkout({
+        items: [{ listing_id: listing.id, quantity_kg: Q }],
+        order_tier: orderTier,
+        fulfillment_type: fulfillmentType,
+        distance_km: fulfillmentType === "delivery" ? estDistanceKm : 0,
+        notes: "",
+      })
+      message.success(`Order confirmed! Receipt ${order.receipt_number}`)
+      navigate(`/orders/${order.id}`)
+    } catch (err) {
+      message.error(err instanceof Error ? err.message : "Checkout failed")
+    } finally {
+      setCheckingOut(false)
+    }
+  }
 
   return (
     <>
@@ -208,31 +235,33 @@ export function ListingDetailsPage() {
           </Typography.Paragraph>
         </div>
 
-        <Space>
-          {!isEditing ? (
-            <>
-              <Button disabled={!listing.can_update} icon={<EditOutlined />} onClick={() => setIsEditing(true)}>
-                Edit Batch Details
-              </Button>
-              {listing.can_delete && <Popconfirm
-                title="Delete this listing?"
-                description="This will permanently delete the batch listing from the repository."
-                okText="Delete"
-                okButtonProps={{ danger: true }}
-                onConfirm={handleDelete}
-              >
-                <Button danger icon={<DeleteOutlined />}>
-                  Delete
+        {!isConsumer && (
+          <Space>
+            {!isEditing ? (
+              <>
+                <Button disabled={!listing.can_update} icon={<EditOutlined />} onClick={() => setIsEditing(true)}>
+                  Edit Batch Details
                 </Button>
-              </Popconfirm>}
-            </>
-          ) : (
-            <Button onClick={() => setIsEditing(false)}>Cancel Edit</Button>
-          )}
-        </Space>
+                {listing.can_delete && <Popconfirm
+                  title="Delete this listing?"
+                  description="This will permanently delete the batch listing from the repository."
+                  okText="Delete"
+                  okButtonProps={{ danger: true }}
+                  onConfirm={handleDelete}
+                >
+                  <Button danger icon={<DeleteOutlined />}>
+                    Delete
+                  </Button>
+                </Popconfirm>}
+              </>
+            ) : (
+              <Button onClick={() => setIsEditing(false)}>Cancel Edit</Button>
+            )}
+          </Space>
+        )}
       </Flex>
 
-      {!listing.group_id && groups.data?.some(g => g.create_batches) && <form className="workspace toolbar" onSubmit={async e => {
+      {!isConsumer && !listing.group_id && groups.data?.some(g => g.create_batches) && <form className="workspace toolbar" onSubmit={async e => {
         e.preventDefault()
         const gid = new FormData(e.currentTarget).get("group")
         if (!gid || !window.confirm("Share this batch? Group permissions will apply, and the group owner will control renaming and deletion.")) return
@@ -247,7 +276,7 @@ export function ListingDetailsPage() {
       }}><label>Share private batch with a group <select name="group" required defaultValue="">
         <option value="" disabled>Choose group</option>{groups.data.filter(g => g.create_batches).map(g =>
           <option key={g.id} value={g.id}>{g.name}</option>)}</select></label><button disabled={saving}>Share batch</button></form>}
-      {listing.group_id && <Button type="link" onClick={() => navigate("/groups/"+listing.group_id)}>Open grower group</Button>}
+      {!isConsumer && listing.group_id && <Button type="link" onClick={() => navigate("/groups/"+listing.group_id)}>Open grower group</Button>}
 
       {/* Editing View */}
       {isEditing ? (
@@ -421,19 +450,40 @@ export function ListingDetailsPage() {
                 </Flex>
               </div>
 
-              {/* Distance Slider */}
+              {/* Collection Method */}
               <div style={{ marginBottom: 16 }}>
-                <Flex justify="space-between">
-                  <Typography.Text strong>Est. Hub Distance:</Typography.Text>
-                  <strong>{estDistanceKm} km</strong>
-                </Flex>
-                <Slider
-                  min={2}
-                  max={120}
-                  value={estDistanceKm}
-                  onChange={(val) => setEstDistanceKm(val)}
-                />
+                <Typography.Text strong style={{ display: "block", marginBottom: 6 }}>
+                  Collection Method:
+                </Typography.Text>
+                <Radio.Group
+                  value={fulfillmentType}
+                  onChange={(e) => setFulfillmentType(e.target.value)}
+                  style={{ width: "100%" }}
+                >
+                  <Radio.Button value="pickup" style={{ width: "50%", textAlign: "center" }}>
+                    Hub Pickup (Free)
+                  </Radio.Button>
+                  <Radio.Button value="delivery" style={{ width: "50%", textAlign: "center" }}>
+                    Delivery
+                  </Radio.Button>
+                </Radio.Group>
               </div>
+
+              {/* Distance Slider */}
+              {fulfillmentType === "delivery" && (
+                <div style={{ marginBottom: 16 }}>
+                  <Flex justify="space-between">
+                    <Typography.Text strong>Est. Hub Distance:</Typography.Text>
+                    <strong>{estDistanceKm} km</strong>
+                  </Flex>
+                  <Slider
+                    min={2}
+                    max={120}
+                    value={estDistanceKm}
+                    onChange={(val) => setEstDistanceKm(val)}
+                  />
+                </div>
+              )}
 
               {/* Validation Badges */}
               <div style={{ marginBottom: 16 }}>
@@ -494,6 +544,31 @@ export function ListingDetailsPage() {
                 type="success"
                 showIcon
               />
+
+              {isConsumer && (
+                <Flex gap={8} style={{ marginTop: 16 }}>
+                  <Button
+                    icon={<ShoppingCartOutlined />}
+                    style={{ flex: 1 }}
+                    disabled={!passesMoq || !passesStock || !listing.is_active}
+                    onClick={() => {
+                      addItem(listing, Q)
+                      message.success(`Added ${Q} kg of ${listing.commodity_name} to cart`)
+                    }}
+                  >
+                    Add to Cart
+                  </Button>
+                  <Button
+                    type="primary"
+                    style={{ flex: 1 }}
+                    loading={checkingOut}
+                    disabled={!passesMoq || !passesStock || !listing.is_active}
+                    onClick={handleQuickCheckout}
+                  >
+                    Checkout Now
+                  </Button>
+                </Flex>
+              )}
             </Card>
           </Col>
         </Row>

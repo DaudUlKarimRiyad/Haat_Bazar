@@ -16,6 +16,9 @@ from app.models import Account, Activity, GrowerGroup, LoginSession, Member, now
 
 DB = Annotated[Session, Depends(get_session)]
 ADMIN = "admin"
+GROWER = "grower"
+CONSUMER = "consumer"
+ROLES = (ADMIN, GROWER, CONSUMER)
 CREATE = "create_batches"
 UPDATE = "update_batches"
 ASSIGN = "assign_batches"
@@ -97,6 +100,20 @@ def require_admin(user: User):
     return user
 
 Admin = Annotated[Account, Depends(require_admin)]
+
+def require_grower(user: User):
+    if user.role not in (GROWER, ADMIN):
+        raise HTTPException(403, "Grower or administrator access required.")
+    return user
+
+Grower = Annotated[Account, Depends(require_grower)]
+
+def require_consumer(user: User):
+    if user.role != CONSUMER:
+        raise HTTPException(403, "Consumer account required for checkout.")
+    return user
+
+Consumer = Annotated[Account, Depends(require_consumer)]
 
 def revoke_all(db, user_id):
     db.execute(update(LoginSession).where(LoginSession.user_id == user_id).values(revoked=True))

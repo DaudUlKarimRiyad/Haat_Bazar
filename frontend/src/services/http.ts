@@ -1,10 +1,12 @@
 import { useSyncExternalStore } from "react"
 
+export type UserRole = "admin" | "grower" | "consumer"
+
 export interface Account {
   id: string
   email: string
   name: string
-  role: "admin" | "user"
+  role: UserRole
   banned: boolean
   ban_reason: string
 }

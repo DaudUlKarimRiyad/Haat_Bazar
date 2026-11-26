@@ -14,7 +14,7 @@ class Account(SQLModel, table=True):
     email: str = Field(unique=True, index=True)
     name: str
     password_hash: str
-    role: str = "user"
+    role: str = "consumer"
     banned: bool = False
     ban_reason: str = ""
     created: int = Field(default_factory=now)
@@ -56,3 +56,54 @@ class SharedBatch(SQLModel, table=True):
     listing_id: str = Field(foreign_key="product_listings.id", primary_key=True, ondelete="CASCADE")
     group_id: str = Field(foreign_key="growergroup.id", index=True)
     assignee: Optional[str] = Field(default=None, foreign_key="account.id")
+
+class Order(SQLModel, table=True):
+    __tablename__ = "orders"
+    id: str = Field(default_factory=uid, primary_key=True)
+    receipt_number: str = Field(unique=True, index=True)
+    consumer_id: str = Field(foreign_key="account.id", index=True)
+    consumer_name: str
+    consumer_email: str
+    order_tier: str = "B2C"
+    fulfillment_type: str = "pickup"
+    distance_km: float = 0.0
+    notes: str = ""
+    subtotal: float
+    service_fee: float
+    delivery_fee: float
+    total_amount: float
+    status: str = "confirmed"
+    created_at: int = Field(default_factory=now, index=True)
+
+class OrderItem(SQLModel, table=True):
+    __tablename__ = "order_items"
+    id: str = Field(default_factory=uid, primary_key=True)
+    order_id: str = Field(foreign_key="orders.id", index=True, ondelete="CASCADE")
+    listing_id: Optional[str] = Field(default=None, index=True)
+    farmer_id: Optional[str] = Field(default=None, foreign_key="account.id", index=True)
+    farmer_name: str
+    commodity_name: str
+    category: str
+    hub_name: str
+    quantity_kg: float
+    unit_price: float
+    moq_kg: float
+    line_total: float
+
+class SalesMemo(SQLModel, table=True):
+    __tablename__ = "sales_memos"
+    id: str = Field(default_factory=uid, primary_key=True)
+    memo_number: str = Field(unique=True, index=True)
+    farmer_id: str = Field(foreign_key="account.id", index=True)
+    farmer_name: str
+    farmer_email: str
+    period_type: str = Field(index=True)
+    period_key: str = Field(index=True)
+    total_orders: int
+    total_items_sold: int
+    total_qty_kg: float
+    gross_sales: float
+    notes: str = ""
+    items_json: str = "[]"
+    created_by: str = Field(foreign_key="account.id")
+    created_at: int = Field(default_factory=now, index=True)

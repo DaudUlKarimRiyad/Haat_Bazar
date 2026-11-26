@@ -60,3 +60,28 @@ body {
 .workspace th, .workspace td { text-align: left; padding: 9px; vertical-align: top; border-bottom: 1px solid var(--border); min-width: 80px; }
 .workspace form > button { margin: 8px 0; }
 .workspace.toolbar { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; margin: 12px 0; }
+
+.printable-document { background: #fff; color: #111; border: 1px solid #d9d9d9; border-radius: 8px; padding: 24px; }
+[data-theme='dark'] .printable-document { background: #19241d; color: #e2eee4; border-color: #415249; }
+
+@media print {
+  .ant-layout-header,
+  .ant-layout-footer,
+  .no-print {
+    display: none !important;
+  }
+  .ant-layout,
+  .ant-layout-content {
+    background: #fff !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+  }
+  .printable-document {
+    border: none !important;
+    box-shadow: none !important;
+    background: #fff !important;
+    color: #000 !important;
+    padding: 0 !important;
+  }
+}

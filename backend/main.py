@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy import text
 
-from app import admin, auth, groups
+from app import admin, auth, groups, orders
 from app.config import FRONTEND_ORIGIN, PRODUCTION
 from app.database import create_db_and_tables, engine
 from app.listings.router import router as listings
@@ -37,7 +37,7 @@ async def unhandled(request, exc):
     logging.getLogger("haat_bazar").exception("Request failed on %s", request.url.path)
     return JSONResponse({"detail": "Internal server error."}, status_code=500)
 
-for router in (auth.router, groups.router, listings, admin.router):
+for router in (auth.router, groups.router, listings, orders.router, admin.router):
     app.include_router(router)
 
 if not PRODUCTION:

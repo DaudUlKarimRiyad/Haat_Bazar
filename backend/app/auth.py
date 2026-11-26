@@ -1,5 +1,5 @@
 import secrets
-from typing import Annotated
+from typing import Annotated, Literal
 
 from fastapi import APIRouter, HTTPException, Request, Response
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_validator
@@ -31,6 +31,7 @@ class Login(Input):
 class Signup(Login):
     name: Name
     password: Password
+    role: Literal["consumer", "grower"] = "consumer"
 
 class Profile(Input):
     name: Name
@@ -41,9 +42,9 @@ class ChangePassword(Input):
 
 @router.post("/signup", status_code=201)
 def signup(data: Signup, request: Request, response: Response, db: DB):
-    user = Account(name=data.name, email=data.email, password_hash=hash_password(data.password))
+    user = Account(name=data.name, email=data.email, password_hash=hash_password(data.password), role=data.role)
     db.add(user)
-    audit(db, request, "signup", user.id)
+    audit(db, request, "signup", user.id, detail=data.role)
     try:
         return new_login(db, response, request, user)
     except IntegrityError:

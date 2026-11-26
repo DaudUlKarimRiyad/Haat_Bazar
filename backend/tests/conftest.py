@@ -28,10 +28,10 @@ def client():
 
 @pytest.fixture
 def account():
-    def register(name):
+    def register(name, role="grower"):
         http = TestClient(app)
         password = secrets.token_urlsafe(16)
-        result = http.post("/api/v1/auth/signup", json={"name": name, "email": name+"@example.test", "password": password})
+        result = http.post("/api/v1/auth/signup", json={"name": name, "email": name+"@example.test", "password": password, "role": role})
         assert result.status_code == 201, result.text
         http.headers["Authorization"] = "Bearer " + result.json()["access_token"]
         return http, result.json()["user"], password

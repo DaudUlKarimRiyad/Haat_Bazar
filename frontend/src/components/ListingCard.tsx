@@ -3,6 +3,7 @@ import {
   DeleteOutlined,
   EnvironmentOutlined,
   EyeOutlined,
+  ShoppingCartOutlined,
   UserOutlined,
 } from "@ant-design/icons"
 import {
@@ -20,9 +21,11 @@ import type { ProductListing, QualityGrade } from "../types/listing"
 
 interface ListingCardProps {
   listing: ProductListing
+  isConsumer?: boolean
   onView: (id: string) => void
   onToggleActive: (listing: ProductListing) => void
   onDelete: (id: string) => void
+  onAddToCart?: (listing: ProductListing) => void
 }
 
 const gradeTagColor = (grade: QualityGrade) => {
@@ -53,9 +56,11 @@ const gradeLabel = (grade: QualityGrade) => {
 
 export function ListingCard({
   listing,
+  isConsumer = false,
   onView,
   onToggleActive,
   onDelete,
+  onAddToCart,
 }: ListingCardProps) {
   const percentAvailable =
     listing.total_yield_kg > 0
@@ -89,13 +94,15 @@ export function ListingCard({
           </Tag>
         </Space>
         <Space size={6}>
-          <Switch
-            size="small"
-            disabled={!listing.can_update}
-            checked={listing.is_active}
-            onChange={() => onToggleActive(listing)}
-            title={listing.is_active ? "Active listing" : "Inactive / Sold out"}
-          />
+          {!isConsumer && (
+            <Switch
+              size="small"
+              disabled={!listing.can_update}
+              checked={listing.is_active}
+              onChange={() => onToggleActive(listing)}
+              title={listing.is_active ? "Active listing" : "Inactive / Sold out"}
+            />
+          )}
         </Space>
       </Flex>
 
@@ -196,14 +203,25 @@ export function ListingCard({
       {/* Card Action Buttons */}
       <Flex gap={8} style={{ borderTop: "1px solid #f0f0f0", paddingTop: 10 }}>
         <Button
-          type="primary"
+          type={isConsumer ? "default" : "primary"}
           icon={<EyeOutlined />}
           style={{ flex: 1 }}
           onClick={() => onView(listing.id)}
         >
-          View Details
+          {isConsumer ? "Details" : "View Details"}
         </Button>
-        {listing.can_delete && <Popconfirm
+        {isConsumer && onAddToCart && (
+          <Button
+            type="primary"
+            icon={<ShoppingCartOutlined />}
+            style={{ flex: 1 }}
+            disabled={!listing.is_active || listing.available_qty_kg < listing.b2c_moq_kg}
+            onClick={() => onAddToCart(listing)}
+          >
+            {listing.available_qty_kg < listing.b2c_moq_kg ? "Sold Out" : "Add to Cart"}
+          </Button>
+        )}
+        {!isConsumer && listing.can_delete && <Popconfirm
           title="Delete Batch Listing"
           description="Are you sure you want to delete this produce batch listing?"
           okText="Delete"

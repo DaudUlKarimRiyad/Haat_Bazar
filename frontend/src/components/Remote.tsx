@@ -6,6 +6,7 @@ export function useRemote<T>(path: string) {
   const [state, setState] = useState<{ key: string, data?: T, error?: string }>({ key: "" })
   const key = path + "#" + revision
   useEffect(() => {
+    if (!path) return
     let active = true
     request<T>(path).then(data => { if (active) setState({ key, data }) })
       .catch(err => { if (active) setState({ key, error: err.message }) })

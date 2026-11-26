@@ -27,21 +27,27 @@
 
 ## Submission build
 
-Haat_Bazar lets growers manage private produce batches and share batches with a cooperative. The React client and FastAPI API share one origin. Sign in at `/signin`, manage devices and passwords at `/account`, and open `/admin` with an administrator account. Interactive API documentation is at `/api/docs`.
+Haat_Bazar supports three distinct user roles (**Admin**, **Grower / Farmer**, and **Consumer**) with a React client and FastAPI API sharing one origin. Sign in or register (`consumer` or `grower`) at `/signin`, manage devices and passwords at `/account`, and explore interactive API docs at `/api/docs`.
 
-### Instructor accounts
+- **Grower / Farmer (`grower`)**: Enlists produce batches (commodity, category, available/total quantity, minimum purchaseable quantity `b2c_moq_kg` / `b2b_moq_kg`, per-kg price), manages cooperative groups at `/groups`, and reviews incoming sales & admin-issued memos at `/sales`.
+- **Consumer (`consumer`)**: Browses active grower batches, selects quantities matching the grower's minimum requirements, checks out for hub pickup or delivery at `/cart`, and views/prints itemized receipts & purchase history at `/orders`.
+- **Admin (`admin`)**: Controls user accounts and roles (`admin`, `grower`, `consumer`), moderates listings/groups, monitors overall transactions and audit activity, exports CSVs, and previews/creates individual **daily** and **monthly** sales memos for growers at `/admin`.
 
-The provisioning command below creates these accounts and five sample batches. Use the email as the login ID. The private submission form and instructor PDF carry the passwords.
+### Instructor demo accounts
+
+The provisioning command below creates seven predefined accounts across all three roles, five sample batches, one cooperative group, and a sample order. Use the email as the login ID. The private submission form and instructor PDF carry the passwords.
 
 | Account ID | Login email | Role | Demonstration |
 | --- | --- | --- | --- |
-| demo-admin1 | admin1@haat.example | admin | User management, moderation, audit and CSV exports |
+| demo-admin1 | admin1@haat.example | admin | User management, moderation, transactions, memos, audit and CSV exports |
 | demo-admin2 | admin2@haat.example | admin | Protected administrator account |
-| demo-grower1 | grower1@haat.example | user | Owns the Bogura Growers Cooperative |
-| demo-grower2 | grower2@haat.example | user | Creates and edits cooperative batches |
-| demo-grower3 | grower3@haat.example | user | Reads and assigns cooperative batches |
+| demo-grower1 | grower1@haat.example | grower | Owns the Bogura Growers Cooperative & lists produce batches |
+| demo-grower2 | grower2@haat.example | grower | Creates and edits cooperative batches |
+| demo-grower3 | grower3@haat.example | grower | Reads and assigns cooperative batches |
+| demo-consumer1 | consumer1@haat.example | consumer | Purchases grower batches, checks out & prints receipts |
+| demo-consumer2 | consumer2@haat.example | consumer | Local retail/bulk consumer account |
 
-Open **Groups → Bogura Growers Cooperative** to compare permissions across accounts. A private batch is visible to its creator. Group access follows current membership, including for the original creator of a shared batch. Owners can rename and delete shared batches and manage members. Administrators moderate across accounts through their dashboard. Deleting a group also deletes its shared batches.
+Open **Groups → Bogura Growers Cooperative** as a grower to compare permissions across cooperative members. A private batch is visible to its creator; group access follows current membership, while consumers see active marketplace batches read-only for checkout. Deleting a group also deletes its shared batches.
 
 ### Run locally
 
@@ -54,7 +60,7 @@ venv/bin/python backend/provision.py --demo
 venv/bin/python -m uvicorn main:app --app-dir backend --reload
 ```
 
-The provisioner prompts privately for five passwords on first use. Subsequent runs preserve existing credentials. The development database defaults to SQLite. Start the frontend in a second terminal and open the localhost URL printed by Vite.
+The provisioner prompts privately for passwords on first use (or reads `DEMO_<LOGIN>_PASSWORD` environment variables). Subsequent runs preserve existing credentials and ensure demo role mappings are up to date. The development database defaults to SQLite. Start the frontend in a second terminal and open the localhost URL printed by Vite.
 
 ```sh
 npm ci --prefix frontend

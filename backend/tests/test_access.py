@@ -82,7 +82,7 @@ def test_admin_actions_exports_security(account):
     promote(other,b,pwd)
     grower, g, pwd = account("Grower")
     assert grower.get(ADMIN+"/users").status_code == 403
-    assert admin.put(ADMIN+"/users/"+a["id"]+"/role",json={"role":"user"}).status_code == 403
+    assert admin.put(ADMIN+"/users/"+a["id"]+"/role",json={"role":"grower"}).status_code == 403
     ban = {"ids":[g["id"],b["id"]],"banned":True,"reason":"Review"}
     assert admin.post(ADMIN+"/users/status",json=ban).status_code == 403
     assert grower.get(BATCH).status_code == 200

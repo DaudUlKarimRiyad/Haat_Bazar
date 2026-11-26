@@ -1,7 +1,7 @@
 from typing import Annotated, Optional
 from fastapi import APIRouter, Depends, Query, Request
 
-from app.access import DB, User, OWNER, audit, group_access
+from app.access import ADMIN, DB, Grower, OWNER, User, audit, group_access
 from app.listings.schemas import ListingCreate, ListingPage, ListingRead, ListingUpdate
 from app.listings.service import ListingService
 from app.models import SharedBatch
@@ -11,10 +11,14 @@ router = APIRouter(prefix="/api/v1/listings", tags=["listings"])
 def listing_service(db: DB, user: User):
     return ListingService(db, user)
 
+def grower_listing_service(db: DB, user: Grower):
+    return ListingService(db, user)
+
 Service = Annotated[ListingService, Depends(listing_service)]
+GrowerService = Annotated[ListingService, Depends(grower_listing_service)]
 
 @router.post("", response_model=ListingRead, status_code=201)
-def create_listing(data: ListingCreate, service: Service):
+def create_listing(data: ListingCreate, service: GrowerService):
     return service.create(data)
 
 @router.get("", response_model=ListingPage)
@@ -28,14 +32,14 @@ def get_listing(listing_id: str, service: Service):
     return service.describe(service.get(listing_id))
 
 @router.patch("/{listing_id}", response_model=ListingRead)
-def update_listing(listing_id: str, data: ListingUpdate, service: Service):
+def update_listing(listing_id: str, data: ListingUpdate, service: GrowerService):
     return service.update(listing_id, data)
 
 @router.delete("/{listing_id}", status_code=204)
-def delete_listing(listing_id: str, service: Service, db: DB, user: User, request: Request):
+def delete_listing(listing_id: str, service: GrowerService, db: DB, user: Grower, request: Request):
     item = service.get(listing_id, lock=True)
     shared = db.get(SharedBatch, listing_id)
-    if shared:
+    if shared and user.role != ADMIN:
         group_access(db, user, shared.group_id, OWNER, lock=True)
     audit(db, request, "delete", user.id, item.id, item.commodity_name)
     db.delete(item)
