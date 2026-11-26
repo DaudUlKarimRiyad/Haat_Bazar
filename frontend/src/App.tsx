@@ -1,20 +1,37 @@
-import { App as AntApp, ConfigProvider, theme } from "antd"
+import { App as AntApp, ConfigProvider, Spin, theme } from "antd"
 import { BrowserRouter, Navigate, Outlet, Route, Routes, useLocation } from "react-router"
+import { lazy, Suspense, useEffect, useState } from "react"
+import { CartProvider } from "./context/CartContext"
 import { useTheme } from "./context/ThemeContext"
 import { AppLayout } from "./layouts/AppLayout"
-import { AboutPage } from "./pages/AboutPage"
-import { CreateListingPage } from "./pages/CreateListingPage"
-import { HomePage } from "./pages/HomePage"
-import { ListingDetailsPage } from "./pages/ListingDetailsPage"
-
-import { useEffect, useState } from "react"
-import { CartProvider } from "./context/CartContext"
 import { AccountPage, SignIn } from "./pages/Account"
-import { AdminPage, AdminUser } from "./pages/Admin"
-import { CartPage, ConsumerOrdersPage, OrderReceiptPage } from "./pages/ConsumerOrders"
-import { GroupsPage, GroupPage } from "./pages/Groups"
-import { GrowerSalesPage, MemoDetailPage } from "./pages/GrowerSales"
+import { HomePage } from "./pages/HomePage"
 import { restore, useSession, type UserRole } from "./services/http"
+
+const AboutPage = lazy(() => import("./pages/AboutPage").then((m) => ({ default: m.AboutPage })))
+const CreateListingPage = lazy(() =>
+  import("./pages/CreateListingPage").then((m) => ({ default: m.CreateListingPage }))
+)
+const ListingDetailsPage = lazy(() =>
+  import("./pages/ListingDetailsPage").then((m) => ({ default: m.ListingDetailsPage }))
+)
+const AdminPage = lazy(() => import("./pages/Admin").then((m) => ({ default: m.AdminPage })))
+const AdminUser = lazy(() => import("./pages/Admin").then((m) => ({ default: m.AdminUser })))
+const CartPage = lazy(() => import("./pages/ConsumerOrders").then((m) => ({ default: m.CartPage })))
+const ConsumerOrdersPage = lazy(() =>
+  import("./pages/ConsumerOrders").then((m) => ({ default: m.ConsumerOrdersPage }))
+)
+const OrderReceiptPage = lazy(() =>
+  import("./pages/ConsumerOrders").then((m) => ({ default: m.OrderReceiptPage }))
+)
+const GroupsPage = lazy(() => import("./pages/Groups").then((m) => ({ default: m.GroupsPage })))
+const GroupPage = lazy(() => import("./pages/Groups").then((m) => ({ default: m.GroupPage })))
+const GrowerSalesPage = lazy(() =>
+  import("./pages/GrowerSales").then((m) => ({ default: m.GrowerSalesPage }))
+)
+const MemoDetailPage = lazy(() =>
+  import("./pages/GrowerSales").then((m) => ({ default: m.MemoDetailPage }))
+)
 
 function Guard({ roles }: { roles?: UserRole[] }) {
   const session = useSession()
@@ -62,7 +79,7 @@ function App() {
       <AntApp>
         <CartProvider>
           <BrowserRouter>
-            {!ready ? <main className="workspace signin">{error ? <><p role="alert">{error}</p><button onClick={() => location.reload()}>Retry connection</button></> : <p role="status">Restoring session…</p>}</main> : <Routes>
+            {!ready ? <main className="workspace signin">{error ? <><p role="alert">{error}</p><button onClick={() => location.reload()}>Retry connection</button></> : <p role="status">Restoring session…</p>}</main> : <Suspense fallback={<div style={{ textAlign: "center", padding: 64 }}><Spin size="large" /></div>}><Routes>
               <Route path="/signin" element={<SignIn/>}/>
               <Route element={<Guard/>}>
               <Route element={<AppLayout />}>
@@ -89,7 +106,7 @@ function App() {
                 <Route path="*" element={<Navigate replace to="/"/>}/>
               </Route>
               </Route>
-            </Routes>}
+            </Routes></Suspense>}
           </BrowserRouter>
         </CartProvider>
       </AntApp>
