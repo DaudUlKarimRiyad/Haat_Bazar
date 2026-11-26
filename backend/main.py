@@ -1,4 +1,5 @@
 import logging
+import os
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
@@ -7,21 +8,21 @@ from fastapi.responses import JSONResponse
 from sqlalchemy import text
 
 from app import admin, auth, groups, orders
-from app.config import FIRESTORE_SYNC_ENABLED, FRONTEND_ORIGIN, PRODUCTION
+from app.config import ALLOWED_ORIGINS, FIRESTORE_SYNC_ENABLED
 from app.database import create_db_and_tables, engine
 from app.firebase import get_firebase_status, get_firestore_client
 from app.listings.router import router as listings
 
 app = FastAPI(title="Haat_Bazar API", version="2.0", docs_url="/api/docs",
               openapi_url="/api/openapi.json", redoc_url=None)
-app.add_middleware(CORSMiddleware, allow_origins=[FRONTEND_ORIGIN], allow_credentials=True,
+app.add_middleware(CORSMiddleware, allow_origins=ALLOWED_ORIGINS, allow_credentials=True,
                    allow_methods=["GET", "POST", "PATCH", "PUT", "DELETE"],
                    allow_headers=["Authorization", "Content-Type"])
 
 @app.middleware("http")
 async def secure_response(request: Request, call_next):
     origin = request.headers.get("origin")
-    if request.method not in ("GET", "HEAD", "OPTIONS") and origin and origin != FRONTEND_ORIGIN:
+    if request.method not in ("GET", "HEAD", "OPTIONS") and origin and origin not in ALLOWED_ORIGINS:
         return JSONResponse({"detail": "Untrusted origin."}, status_code=403)
     response = await call_next(request)
     response.headers["Cache-Control"] = "no-store"
@@ -41,7 +42,7 @@ async def unhandled(request, exc):
 for router in (auth.router, groups.router, listings, orders.router, admin.router):
     app.include_router(router)
 
-if not PRODUCTION:
+if os.getenv("ENVIRONMENT") != "test":
     create_db_and_tables()
 
 @app.get("/api/health")
