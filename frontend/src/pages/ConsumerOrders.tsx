@@ -120,7 +120,7 @@ export function CartPage() {
       ) : (
         <Row gutter={[20, 20]} style={{ marginTop: 20 }}>
           <Col xs={24} lg={15}>
-            <Card title={`Selected Produce (${items.length})`} size="small">
+            <Card className="glass-card" title={`Selected Produce (${items.length})`} size="small">
               {lineChecks.map(({ listing, quantity_kg, moq, passesMoq, passesStock, lineTotal }) => (
                 <div
                   key={listing.id}
@@ -335,17 +335,17 @@ export function ConsumerOrdersPage() {
 
       <Row gutter={[16, 16]} style={{ margin: "16px 0 24px" }}>
         <Col xs={24} sm={8}>
-          <Card size="small">
+          <Card size="small" className="glass-card tabular-nums">
             <Statistic title="Total Orders" value={orders.length} />
           </Card>
         </Col>
         <Col xs={24} sm={8}>
-          <Card size="small">
+          <Card size="small" className="glass-card tabular-nums">
             <Statistic title="Total Quantity Purchased" value={Number(totalKg.toFixed(2))} suffix="kg" />
           </Card>
         </Col>
         <Col xs={24} sm={8}>
-          <Card size="small">
+          <Card size="small" className="glass-card tabular-nums">
             <Statistic title="Total Spent" value={Number(totalSpent.toFixed(2))} prefix="৳" />
           </Card>
         </Col>

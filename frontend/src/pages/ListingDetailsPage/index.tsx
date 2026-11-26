@@ -295,6 +295,7 @@ export function ListingDetailsPage() {
           {/* Main Details Column */}
           <Col xs={24} lg={15}>
             <Card
+              className="glass-card"
               title={
                 <Flex align="center" gap={8}>
                   <SafetyCertificateOutlined style={{ color: "#52c41a" }} />
@@ -361,13 +362,13 @@ export function ListingDetailsPage() {
             </Card>
 
             {/* Anti-Loss Guard Breakdown */}
-            <Card title="Anti-Loss Guard & Dynamic Unit Economics" size="small">
+            <Card className="glass-card" title="Anti-Loss Guard & Dynamic Unit Economics" size="small">
               <Typography.Paragraph type="secondary" style={{ fontSize: 13 }}>
                 Under traditional supply chains, small fragmented drops cause middleman gouging. Haat_Bazar enforces mathematical constraints (Qi &gt;= MOQ) and Minimum Order Value (MOV) to ensure transport viability.
               </Typography.Paragraph>
               <Row gutter={16}>
                 <Col span={12}>
-                  <div style={{ background: "#f6ffed", border: "1px solid #b7eb8f", padding: 12, borderRadius: 6 }}>
+                  <div className="glass-tier-b2c">
                     <Typography.Text strong style={{ color: "#389e0d" }}>
                       B2C Household Tier
                     </Typography.Text>
@@ -379,7 +380,7 @@ export function ListingDetailsPage() {
                   </div>
                 </Col>
                 <Col span={12}>
-                  <div style={{ background: "#e6f7ff", border: "1px solid #91d5ff", padding: 12, borderRadius: 6 }}>
+                  <div className="glass-tier-b2b">
                     <Typography.Text strong style={{ color: "#096dd9" }}>
                       B2B Bulk Wholesale Tier
                     </Typography.Text>
@@ -504,15 +505,7 @@ export function ListingDetailsPage() {
               </div>
 
               {/* Breakdown Table */}
-              <div
-                style={{
-                  background: "rgba(255, 255, 255, 0.7)",
-                  padding: 12,
-                  borderRadius: 6,
-                  border: "1px solid #d9d9d9",
-                  marginBottom: 16,
-                }}
-              >
+              <div className="glass-inset-box tabular-nums" style={{ marginBottom: 16 }}>
                 <Flex justify="space-between" style={{ marginBottom: 6 }}>
                   <span>Farmer Payout (Q × U):</span>
                   <strong>৳ {P_farmer.toLocaleString()}</strong>

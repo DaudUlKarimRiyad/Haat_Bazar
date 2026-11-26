@@ -37,7 +37,25 @@ function App() {
         algorithm: darkMode ? theme.darkAlgorithm : theme.defaultAlgorithm,
         token: {
           colorPrimary: "#389e0d", // Agricultural lush green
-          borderRadius: 6,
+          borderRadius: 10,
+          fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+          colorBgContainer: darkMode ? "rgba(22, 34, 26, 0.72)" : "rgba(255, 255, 255, 0.78)",
+          colorBgElevated: darkMode ? "rgba(24, 38, 29, 0.92)" : "rgba(255, 255, 255, 0.92)",
+        },
+        components: {
+          Card: {
+            borderRadiusLG: 14,
+          },
+          Button: {
+            borderRadius: 8,
+            controlHeight: 38,
+          },
+          Input: {
+            borderRadius: 8,
+          },
+          Select: {
+            borderRadius: 8,
+          },
         },
       }}
     >

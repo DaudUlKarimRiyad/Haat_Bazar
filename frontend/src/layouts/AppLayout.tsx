@@ -4,8 +4,11 @@ import {
   InfoCircleOutlined,
   PlusCircleOutlined,
   RiseOutlined,
+  SafetyCertificateOutlined,
   ShoppingCartOutlined,
   SolutionOutlined,
+  TeamOutlined,
+  UserOutlined,
 } from "@ant-design/icons"
 import { Badge, Flex, Layout, Menu, Switch, Tag, Typography } from "antd"
 import { Link, Outlet, useLocation } from "react-router"
@@ -36,108 +39,145 @@ export function AppLayout() {
 
   return (
     <Layout style={{ minHeight: "100vh" }}>
-      <Layout.Header
-        style={{
-          position: "sticky",
-          top: 0,
-          zIndex: 100,
-          display: "flex",
-          alignItems: "center",
-          gap: 20,
-          padding: "0 24px",
-          background: darkMode ? "#141414" : "#003a08",
-          boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
-        }}
-      >
-        <Link to="/" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
-          <span style={{ fontSize: 24 }}>🌾</span>
-          <div>
-            <Typography.Text strong style={{ fontSize: 18, color: "#ffffff", display: "block", lineHeight: 1.2 }}>
-              Haat_Bazar
-            </Typography.Text>
-            <span style={{ fontSize: 11, color: "#95de64", letterSpacing: 0.5 }}>
-              হাট বাজার • Direct Agri Chain
-            </span>
-          </div>
-        </Link>
-
-        <Menu
-          theme="dark"
-          mode="horizontal"
-          selectedKeys={[getSelectedKey()]}
+      <Layout.Header className="glass-header">
+        <div
           style={{
-            flex: 1,
-            minWidth: 0,
-            background: "transparent",
-            borderBottom: "none",
+            maxWidth: 1120,
+            width: "100%",
+            margin: "0 auto",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 16,
           }}
-          items={[
-            {
-              key: "listings",
-              icon: <AppstoreOutlined />,
-              label: <Link to="/">{role === "consumer" ? "Marketplace" : "Batch Listings"}</Link>,
-            },
-            ...(isGrowerOrAdmin
-              ? [
-                  {
-                    key: "create",
-                    icon: <PlusCircleOutlined />,
-                    label: <Link to="/create">Add Produce Batch</Link>,
-                  },
-                  { key: "groups", label: <Link to="/groups">Groups</Link> },
-                ]
-              : []),
-            ...(role === "grower"
-              ? [
-                  {
-                    key: "sales",
-                    icon: <RiseOutlined />,
-                    label: <Link to="/sales">Sales & Memos</Link>,
-                  },
-                ]
-              : []),
-            ...(role === "consumer"
-              ? [
-                  {
-                    key: "cart",
-                    icon: <ShoppingCartOutlined />,
-                    label: (
-                      <Link to="/cart">
-                        Cart{" "}
-                        {cartItems.length > 0 && (
-                          <Badge count={cartItems.length} size="small" offset={[4, -2]} />
-                        )}
-                      </Link>
-                    ),
-                  },
-                  {
-                    key: "orders",
-                    icon: <SolutionOutlined />,
-                    label: <Link to="/orders">Orders & Receipts</Link>,
-                  },
-                ]
-              : []),
-            { key: "account", label: <Link to="/account">My account</Link> },
-            ...(role === "admin" ? [{ key: "admin", label: <Link to="/admin">Administration</Link> }] : []),
-            {
-              key: "about",
-              icon: <InfoCircleOutlined />,
-              label: <Link to="/about">System & About</Link>,
-            },
-          ]}
-        />
+        >
+          <Link
+            to="/"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              textDecoration: "none",
+              flexShrink: 0,
+              lineHeight: 1.2,
+            }}
+          >
+            <span style={{ fontSize: 24, lineHeight: 1 }}>🌾</span>
+            <div style={{ display: "flex", flexDirection: "column", justifyContent: "center" }}>
+              <Typography.Text
+                strong
+                style={{ fontSize: 17, color: "#ffffff", display: "block", lineHeight: 1.2 }}
+              >
+                Haat_Bazar
+              </Typography.Text>
+              <span style={{ fontSize: 11, color: "#b7eb8f", letterSpacing: 0.4, lineHeight: 1.25 }}>
+                হাট বাজার • Direct Agri Chain
+              </span>
+            </div>
+          </Link>
 
-        <Flex align="center" gap={10}>
-          <Tag color={roleColor} style={{ margin: 0 }}>
-            {roleLabel}
-          </Tag>
-          <Switch
-            checked={darkMode}
-            onChange={toggleDark}
-            checkedChildren="🌙"
-            unCheckedChildren="☀️"
+          <Menu
+            theme="dark"
+            mode="horizontal"
+            selectedKeys={[getSelectedKey()]}
+            style={{
+              flex: 1,
+              minWidth: 0,
+              height: 66,
+              lineHeight: "66px",
+              background: "transparent",
+              borderBottom: "none",
+            }}
+            items={[
+              {
+                key: "listings",
+                icon: <AppstoreOutlined />,
+                label: <Link to="/">{role === "consumer" ? "Marketplace" : "Batches"}</Link>,
+              },
+              ...(isGrowerOrAdmin
+                ? [
+                    {
+                      key: "create",
+                      icon: <PlusCircleOutlined />,
+                      label: <Link to="/create">Add Batch</Link>,
+                    },
+                    {
+                      key: "groups",
+                      icon: <TeamOutlined />,
+                      label: <Link to="/groups">Groups</Link>,
+                    },
+                  ]
+                : []),
+              ...(role === "grower"
+                ? [
+                    {
+                      key: "sales",
+                      icon: <RiseOutlined />,
+                      label: <Link to="/sales">Sales &amp; Memos</Link>,
+                    },
+                  ]
+                : []),
+              ...(role === "consumer"
+                ? [
+                    {
+                      key: "cart",
+                      icon: <ShoppingCartOutlined />,
+                      label: (
+                        <Link to="/cart" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                          <span>Cart</span>
+                          {cartItems.length > 0 && <Badge count={cartItems.length} size="small" />}
+                        </Link>
+                      ),
+                    },
+                    {
+                      key: "orders",
+                      icon: <SolutionOutlined />,
+                      label: <Link to="/orders">Orders</Link>,
+                    },
+                  ]
+                : []),
+              {
+                key: "account",
+                icon: <UserOutlined />,
+                label: <Link to="/account">Account</Link>,
+              },
+              ...(role === "admin"
+                ? [
+                    {
+                      key: "admin",
+                      icon: <SafetyCertificateOutlined />,
+                      label: <Link to="/admin">Admin</Link>,
+                    },
+                  ]
+                : []),
+              {
+                key: "about",
+                icon: <InfoCircleOutlined />,
+                label: <Link to="/about">About</Link>,
+              },
+            ]}
           />
-        </Flex>
+
+          <Flex align="center" gap={10} style={{ flexShrink: 0 }}>
+            <Tag
+              color={roleColor}
+              style={{
+                margin: 0,
+                fontWeight: 600,
+                borderRadius: 999,
+                padding: "2px 10px",
+              }}
+            >
+              {roleLabel}
+            </Tag>
+            <Switch
+              checked={darkMode}
+              onChange={toggleDark}
+              checkedChildren="🌙"
+              unCheckedChildren="☀️"
+            />
+          </Flex>
+        </div>
       </Layout.Header>
 
       <Layout.Content
@@ -145,20 +185,13 @@ export function AppLayout() {
           maxWidth: 1120,
           width: "100%",
           margin: "0 auto",
-          padding: "24px 16px 48px",
+          padding: "26px 16px 52px",
         }}
       >
         <Outlet />
       </Layout.Content>
 
-      <Layout.Footer
-        style={{
-          textAlign: "center",
-          background: darkMode ? "#141414" : "#f0f2f5",
-          borderTop: darkMode ? "1px solid #303030" : "1px solid #e8e8e8",
-          padding: "20px 16px",
-        }}
-      >
+      <Layout.Footer className="glass-footer">
         <Typography.Text type="secondary" style={{ fontSize: 13 }}>
           🌾 <strong>Haat_Bazar (হাট বাজার)</strong> — Agricultural Disintermediation Marketplace
         </Typography.Text>

@@ -21,6 +21,7 @@ export function AboutPage() {
       <Row gutter={[16, 16]}>
         <Col xs={24} md={12}>
           <Card
+            className="glass-card"
             title={
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <TeamOutlined style={{ color: "#52c41a" }} />
@@ -50,6 +51,7 @@ export function AboutPage() {
 
         <Col xs={24} md={12}>
           <Card
+            className="glass-card"
             title={
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <ApiOutlined style={{ color: "#1890ff" }} />

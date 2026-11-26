@@ -275,8 +275,17 @@ export function HomePage() {
     <>
       {/* Banner / Header */}
       <div className="haat-banner">
-        <Row align="middle" justify="space-between" gutter={[16, 16]}>
-          <Col xs={24} md={16}>
+        <Flex align="center" justify="space-between" wrap="wrap" gap={16}>
+          <div style={{ flex: "1 1 420px", position: "relative", zIndex: 1 }}>
+            <div className="hero-eyebrow">
+              <span>
+                {isConsumer
+                  ? "Fresh Hub Collection & Direct Orders"
+                  : session.user.role === "admin"
+                    ? "Platform Administration & Oversight"
+                    : "Grower Inventory & Cooperative Hub"}
+              </span>
+            </div>
             <Typography.Title
               level={2}
               style={{ color: "#ffffff", margin: "0 0 8px" }}
@@ -295,8 +304,8 @@ export function HomePage() {
                 ? "Local Fresh Produce Marketplace. Browse grower batches, match minimum purchaseable quantities, checkout for hub pickup or delivery, and print your receipt."
                 : "Direct Farm-to-Consumer & Bulk Wholesale Marketplace. Disintermediating rural middlemen (Dalals/Farias) to empower farmers with transparent pricing, digital grading, and automated escrow."}
             </Typography.Paragraph>
-          </Col>
-          <Col xs={24} md={8} style={{ textAlign: "right" }}>
+          </div>
+          <div>
             {isConsumer ? (
               <Button
                 type="primary"
@@ -311,7 +320,7 @@ export function HomePage() {
                 }}
                 onClick={() => navigate("/cart")}
               >
-                Cart & Checkout ({cartItems.length})
+                Cart &amp; Checkout ({cartItems.length})
               </Button>
             ) : (
               <Button
@@ -330,8 +339,8 @@ export function HomePage() {
                 Add Produce Batch
               </Button>
             )}
-          </Col>
-        </Row>
+          </div>
+        </Flex>
       </div>
 
       {error && (
@@ -391,7 +400,7 @@ export function HomePage() {
           ))}
         </Row>
       ) : (
-        <Card bordered={false} bodyStyle={{ padding: 0 }}>
+        <Card className="glass-card" styles={{ body: { padding: 0, overflow: "hidden" } }}>
           <Table
             dataSource={filteredListings}
             columns={tableColumns}

@@ -34,7 +34,7 @@ export function ListingStats({ listings, total }: ListingStatsProps) {
     <div style={{ marginBottom: 24 }}>
       <Row gutter={[16, 16]}>
         <Col xs={12} sm={6}>
-          <Card size="small" bordered hoverable>
+          <Card size="small" hoverable className="glass-card glass-card-interactive tabular-nums" style={{ height: "100%" }}>
             <Statistic
               title="Active Produce Batches"
               value={activeListings.length}
@@ -45,7 +45,7 @@ export function ListingStats({ listings, total }: ListingStatsProps) {
         </Col>
 
         <Col xs={12} sm={6}>
-          <Card size="small" bordered hoverable>
+          <Card size="small" hoverable className="glass-card glass-card-interactive tabular-nums" style={{ height: "100%" }}>
             <Statistic
               title="Total Available Volume"
               value={
@@ -59,7 +59,7 @@ export function ListingStats({ listings, total }: ListingStatsProps) {
         </Col>
 
         <Col xs={12} sm={6}>
-          <Card size="small" bordered hoverable>
+          <Card size="small" hoverable className="glass-card glass-card-interactive tabular-nums" style={{ height: "100%" }}>
             <Statistic
               title="Avg Farmer Unit Price"
               value={avgPrice}
@@ -70,7 +70,7 @@ export function ListingStats({ listings, total }: ListingStatsProps) {
         </Col>
 
         <Col xs={12} sm={6}>
-          <Card size="small" bordered hoverable>
+          <Card size="small" hoverable className="glass-card glass-card-interactive tabular-nums" style={{ height: "100%" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
               <Statistic
                 title="Commodity Categories"

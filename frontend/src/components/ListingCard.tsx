@@ -71,18 +71,20 @@ export function ListingCard({
     <Card
       hoverable
       size="small"
+      className="glass-card glass-card-interactive"
       style={{
         height: "100%",
         display: "flex",
         flexDirection: "column",
-        opacity: listing.is_active ? 1 : 0.65,
-        borderColor: listing.is_active ? undefined : "#d9d9d9",
+        opacity: listing.is_active ? 1 : 0.68,
       }}
-      bodyStyle={{
-        display: "flex",
-        flexDirection: "column",
-        flex: 1,
-        padding: "16px",
+      styles={{
+        body: {
+          display: "flex",
+          flexDirection: "column",
+          flex: 1,
+          padding: "18px",
+        },
       }}
     >
       {/* Top Header Tags */}
@@ -120,26 +122,19 @@ export function ListingCard({
       </Typography.Title>
 
       {/* Farmer & Hub Metadata */}
-      <div style={{ marginBottom: 12, fontSize: 13, color: "#595959" }}>
+      <div style={{ marginBottom: 12, fontSize: 13, color: "var(--ink-muted)" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 3 }}>
-          <UserOutlined style={{ color: "#8c8c8c" }} />
+          <UserOutlined />
           <span>{listing.farmer_name}</span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <EnvironmentOutlined style={{ color: "#8c8c8c" }} />
+          <EnvironmentOutlined />
           <span>{listing.hub_name}</span>
         </div>
       </div>
 
       {/* Pricing & Volume */}
-      <div
-        style={{
-          background: "rgba(0,0,0,0.03)",
-          padding: "10px 12px",
-          borderRadius: 6,
-          marginBottom: 12,
-        }}
-      >
+      <div className="glass-inset-box tabular-nums" style={{ marginBottom: 12 }}>
         <Flex justify="space-between" align="baseline">
           <Typography.Text type="secondary" style={{ fontSize: 12 }}>
             Farmer Base Price
@@ -149,7 +144,7 @@ export function ListingCard({
             style={{ margin: 0, color: "#389e0d", fontWeight: 700 }}
           >
             ৳ {listing.farmer_unit_price}{" "}
-            <span style={{ fontSize: 12, fontWeight: "normal", color: "#8c8c8c" }}>
+            <span style={{ fontSize: 12, fontWeight: "normal", color: "var(--ink-muted)" }}>
               / kg
             </span>
           </Typography.Title>
@@ -186,7 +181,7 @@ export function ListingCard({
       <div
         style={{
           fontSize: 12,
-          color: "#8c8c8c",
+          color: "var(--ink-muted)",
           marginBottom: 14,
           display: "flex",
           alignItems: "center",
@@ -201,7 +196,7 @@ export function ListingCard({
       <div style={{ flex: 1 }} />
 
       {/* Card Action Buttons */}
-      <Flex gap={8} style={{ borderTop: "1px solid #f0f0f0", paddingTop: 10 }}>
+      <Flex gap={8} style={{ borderTop: "1px solid var(--border)", paddingTop: 12 }}>
         <Button
           type={isConsumer ? "default" : "primary"}
           icon={<EyeOutlined />}

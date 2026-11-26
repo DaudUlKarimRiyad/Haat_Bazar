@@ -43,6 +43,7 @@ export function CreateListingPage() {
       </Button>
 
       <Card
+        className="glass-card"
         title={
           <Flex align="center" gap={10}>
             <PlusCircleOutlined style={{ color: "#52c41a", fontSize: 20 }} />

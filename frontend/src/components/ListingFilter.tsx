@@ -38,12 +38,10 @@ const GRADES = [
 export function ListingFilter({ values, onChange }: ListingFilterProps) {
   return (
     <div
+      className="glass-surface"
       style={{
-        padding: "16px",
-        marginBottom: 20,
-        background: "rgba(0, 0, 0, 0.02)",
-        borderRadius: 8,
-        border: "1px solid rgba(0, 0, 0, 0.06)",
+        padding: "14px 16px",
+        marginBottom: 22,
       }}
     >
       <Row gutter={[12, 12]} align="middle">

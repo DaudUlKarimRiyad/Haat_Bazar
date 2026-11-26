@@ -60,17 +60,17 @@ export function GrowerSalesPage() {
         <>
           <Row gutter={[16, 16]} style={{ margin: "16px 0 24px" }}>
             <Col xs={24} sm={8}>
-              <Card size="small">
+              <Card size="small" className="glass-card tabular-nums">
                 <Statistic title="Orders Fulfilled" value={sales?.total_orders ?? 0} />
               </Card>
             </Col>
             <Col xs={24} sm={8}>
-              <Card size="small">
+              <Card size="small" className="glass-card tabular-nums">
                 <Statistic title="Total Produce Sold" value={sales?.total_qty_kg ?? 0} suffix="kg" />
               </Card>
             </Col>
             <Col xs={24} sm={8}>
-              <Card size="small">
+              <Card size="small" className="glass-card tabular-nums">
                 <Statistic title="Gross Grower Payout" value={sales?.total_revenue ?? 0} prefix="৳" />
               </Card>
             </Col>

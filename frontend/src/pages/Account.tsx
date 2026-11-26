@@ -12,7 +12,12 @@ export function SignIn() {
   const session = useSession()
   const location = useLocation()
   if (session) return <Navigate replace to={location.state?.from || "/"} />
-  return <main className="workspace signin"><h1>Haat_Bazar</h1><h2>{signup ? "Create an account" : "Sign in"}</h2>
+  return <main className="workspace signin">
+    <p style={{ margin: "0 0 6px", fontSize: 12, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--accent-bright)" }}>
+      🌾 Direct Farm-to-Consumer Chain
+    </p>
+    <h1>Haat_Bazar</h1>
+    <h2 style={{ marginTop: 8 }}>{signup ? "Create an account" : "Sign in"}</h2>
     <form key={String(signup)} onSubmit={e => {
       e.preventDefault()
       const values = Object.fromEntries(new FormData(e.currentTarget))
