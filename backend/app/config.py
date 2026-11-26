@@ -11,11 +11,14 @@ load_dotenv(BACKEND_DIR / ".env")
 PRODUCTION = bool(os.getenv("VERCEL")) or os.getenv("ENVIRONMENT") == "production"
 
 _raw_cred_path = os.getenv("FIREBASE_CREDENTIALS_PATH") or os.getenv("GOOGLE_APPLICATION_CREDENTIALS") or ""
-if _raw_cred_path and not Path(_raw_cred_path).is_absolute():
-    if (ROOT_DIR / _raw_cred_path).exists():
-        _raw_cred_path = str(ROOT_DIR / _raw_cred_path)
-    elif (BACKEND_DIR / _raw_cred_path).exists():
-        _raw_cred_path = str(BACKEND_DIR / _raw_cred_path)
+if _raw_cred_path:
+    if not Path(_raw_cred_path).is_absolute():
+        if (ROOT_DIR / _raw_cred_path).exists():
+            _raw_cred_path = str(ROOT_DIR / _raw_cred_path)
+        elif (BACKEND_DIR / _raw_cred_path).exists():
+            _raw_cred_path = str(BACKEND_DIR / _raw_cred_path)
+    if not Path(_raw_cred_path).exists():
+        _raw_cred_path = ""
 
 FIREBASE_CREDENTIALS_PATH = _raw_cred_path
 FIREBASE_JSON_CONTENT = os.getenv("FIREBASE_CREDENTIALS_JSON", "")
@@ -32,7 +35,9 @@ for prefix in ("postgres://", "postgresql://"):
 if DATABASE_URL.startswith("sqlite:///") and not DATABASE_URL.startswith("sqlite:////"):
     relative = DATABASE_URL[len("sqlite:///"):]
     if relative != ":memory:":
-        DATABASE_URL = f"sqlite:///{ROOT_DIR / relative}"
+        DATABASE_URL = f"sqlite:///{'/tmp/' + Path(relative).name if PRODUCTION else ROOT_DIR / relative}"
+if PRODUCTION and DATABASE_URL.startswith("sqlite:///") and not DATABASE_URL.startswith("sqlite:////tmp/") and DATABASE_URL != "sqlite:///:memory:":
+    DATABASE_URL = "sqlite:////tmp/haat_bazar.db"
 if PRODUCTION and not DATABASE_URL.startswith("postgresql+psycopg://") and not FIRESTORE_SYNC_ENABLED:
     raise RuntimeError(
         "Set DATABASE_URL to a hosted PostgreSQL connection or configure FIREBASE_CREDENTIALS_JSON for Firestore."
